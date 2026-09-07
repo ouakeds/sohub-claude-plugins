@@ -46,7 +46,7 @@ L'orchestrateur route vers les agents (`researcher`, `backend-dev`, `frontend-de
 | Catégorie | Skills | Rôle |
 | --- | --- | --- |
 | `skills/flow/` | `detect-stack`, `build-check` | outillage interne du flux `/ticket` |
-| `skills/documentation/` | `openapi-doc`, `readme-convention`, `changelog-convention` | génération/convention de la doc du projet cible |
+| `skills/documentation/` | `generate-openapi`, `generate-readme`, `generate-changelog` | génération/convention de la doc du projet cible |
 | `skills/audit/` | `rgaa-check`, `security-audit` | détection + correction de non-conformités |
 
 ... sans jamais redonner à un sous-agent plus de contexte qu'il n'en a besoin.

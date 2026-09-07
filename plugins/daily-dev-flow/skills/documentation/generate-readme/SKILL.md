@@ -1,5 +1,5 @@
 ---
-name: readme-convention
+name: generate-readme
 description: >
   Convention de génération/mise à jour d'un README.md, basée sur Make a README et Standard
   Readme. À utiliser dès qu'un README.md doit être créé (project-scaffold) ou mis à jour suite
@@ -36,7 +36,7 @@ peu long et complet qu'un README trop court qui oblige à lire le code.
    contribution reste vérifiable.
 9. **Contribuer** — lien vers `CONTRIBUTING.md` si présent, sinon règles minimales (branche,
    convention de commit → cf. skill `commit-convention`).
-10. **Changelog** — lien vers `CHANGELOG.md` (cf. skill `changelog-convention`), jamais dupliqué
+10. **Changelog** — lien vers `CHANGELOG.md` (cf. skill `generate-changelog`), jamais dupliqué
     dans le README.
 11. **Licence** — nom + lien vers le fichier `LICENSE`.
 12. **Statut du projet** — actif / maintenance / archivé, si pertinent.
@@ -56,6 +56,6 @@ peu long et complet qu'un README trop court qui oblige à lire le code.
 
 ## Ce que cette skill ne fait pas
 
-- Ne génère pas de CHANGELOG.md (cf. `changelog-convention`).
-- Ne documente pas d'API détaillée (endpoints, schémas) — cf. skill `openapi-doc` pour une doc
+- Ne génère pas de CHANGELOG.md (cf. `generate-changelog`).
+- Ne documente pas d'API détaillée (endpoints, schémas) — cf. skill `generate-openapi` pour une doc
   d'API générée depuis le code.

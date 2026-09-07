@@ -42,9 +42,13 @@ travaille peut-être en parallèle sur une sous-tâche voisine, parfois celle do
 - Reste dans le périmètre de `fichiers_cibles`. Si tu dois toucher un fichier hors périmètre
   (ex. un fichier de routes global, un store partagé), c'est une décision consciente justifiée
   dans `resume` — pas un effet de bord découvert après coup.
-- Tu peux lancer des vérifications ponctuelles (build partiel, un test ciblé) pour valider ton
-  propre travail, mais le build final ne t'appartient pas — c'est le rôle de la vérification de
-  build orchestrée par `/ticket`. Ne le lance pas toi-même.
+- Tu peux lancer des vérifications ponctuelles (build partiel, un test déjà existant et ciblé)
+  pour valider ton propre travail, mais le build final ne t'appartient pas — c'est le rôle de la
+  vérification de build orchestrée par `/ticket`. Ne le lance pas toi-même.
+- N'écris jamais de test (unitaire, intégration...) toi-même, que ce soit pour la sous-tâche ou
+  en complément — hors scope v1 du plugin, ça alourdit le temps de dev sans valeur ajoutée
+  demandée. Tu peux exécuter des tests déjà présents dans le projet pour valider ton travail,
+  mais n'en crée aucun.
 
 ## Quand tu bloques
 

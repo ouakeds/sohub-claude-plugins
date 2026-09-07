@@ -5,6 +5,7 @@ description: >
   vulnérabilités OWASP, secrets exposés, injections, mauvaises configurations. Rédige un
   rapport versionné dans .sohub-claude-plugin/audit/ et propose d'appliquer les correctifs
   trouvés. Skill autonome, invocable à tout moment — pas une étape automatique de /ticket.
+disable-model-invocation: true
 ---
 
 # security-audit
@@ -22,7 +23,7 @@ absents, permissions excessives).
 
 ## Persistance du rapport
 
-Convention partagée par les skills additionnels du plugin (`security-audit`, `openapi-doc`) :
+Convention partagée par les skills additionnels du plugin (`security-audit`, `generate-openapi`) :
 
 1. **Première exécution sur le projet cible** : créer `.sohub-claude-plugin/` à la racine du
    projet cible s'il n'existe pas, et ajouter la ligne `.sohub-claude-plugin/` au `.gitignore`

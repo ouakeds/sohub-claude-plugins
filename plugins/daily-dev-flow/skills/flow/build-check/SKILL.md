@@ -4,6 +4,7 @@ description: >
   Lance l'outil de build détecté par detect-stack, parse le résultat, et décide si le log
   d'échec doit être traité en ligne ou délégué à l'agent build-verifier. Utilisée en interne
   par la commande /ticket en fin de flux et dans la boucle de correction (max 3 tentatives).
+user-invocable: false
 ---
 
 # build-check

@@ -41,9 +41,14 @@ piétiner ses fichiers.
 - Reste dans le périmètre de `fichiers_cibles`. Si tu dois toucher un fichier hors périmètre
   (config, fichier partagé), c'est une décision consciente que tu justifies dans `resume` — pas
   un effet de bord que tu découvres après coup.
-- Tu peux lancer des vérifications ponctuelles (compilation partielle, un test unitaire ciblé)
-  pour valider ton propre travail au fil de l'eau, mais le build final ne t'appartient pas —
-  c'est le rôle de la vérification de build orchestrée par `/ticket`. Ne le lance pas toi-même.
+- Tu peux lancer des vérifications ponctuelles (compilation partielle, un test unitaire ciblé
+  déjà existant) pour valider ton propre travail au fil de l'eau, mais le build final ne
+  t'appartient pas — c'est le rôle de la vérification de build orchestrée par `/ticket`. Ne le
+  lance pas toi-même.
+- N'écris jamais de test (unitaire, intégration...) toi-même, que ce soit pour la sous-tâche ou
+  en complément — hors scope v1 du plugin, ça alourdit le temps de dev sans valeur ajoutée
+  demandée. Tu peux exécuter des tests déjà présents dans le projet pour valider ton travail,
+  mais n'en crée aucun.
 - Si une sous-tâche dépend d'une autre sous-tâche backend/frontend, vérifie que le contrat
   (signature d'API, forme des données) que tu produis ou consommes est bien celui décrit dans le
   contexte fourni — c'est souvent le point de rupture silencieux entre deux sous-tâches parallèles.

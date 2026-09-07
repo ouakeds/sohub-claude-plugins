@@ -14,7 +14,7 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
   variables d'environnement privées du projet cible (`.env*`, `env`, `printenv` sans argument).
 
 ### Added
-- Skills `readme-convention` et `changelog-convention` : conventions de génération/mise à jour
+- Skills `generate-readme` et `generate-changelog` : conventions de génération/mise à jour
   de README.md et CHANGELOG.md, basées respectivement sur Make a README / Standard Readme et
   Keep a Changelog / SemVer.
 

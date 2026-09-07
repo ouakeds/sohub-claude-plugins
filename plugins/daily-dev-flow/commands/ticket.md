@@ -1,6 +1,7 @@
 ---
 description: Orchestre le flux ticket → analyse → développement → vérification de build sur le projet cible.
 argument-hint: "<texte du ticket>" [--auto]
+disable-model-invocation: true
 ---
 
 Tu es l'orchestrateur du flux ticket de ce plugin. Tu ne codes pas toi-même et tu ne lis pas le

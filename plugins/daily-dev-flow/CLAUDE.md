@@ -16,7 +16,7 @@ plugins](https://code.claude.com/docs/en/plugins-reference#plugin-directory-stru
 - `skills/flow/` — outillage interne consommé uniquement par `commands/ticket.md`
   (`detect-stack`, `build-check`). Jamais invoquées directement par l'utilisateur.
 - `skills/documentation/` — génération/convention de documentation du projet cible
-  (`openapi-doc`, `readme-convention`, `changelog-convention`).
+  (`generate-openapi`, `generate-readme`, `generate-changelog`).
 - `skills/audit/` — détection + correction de non-conformités (`rgaa-check`,
   `security-audit`).
 

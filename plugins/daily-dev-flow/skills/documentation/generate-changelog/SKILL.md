@@ -1,5 +1,5 @@
 ---
-name: changelog-convention
+name: generate-changelog
 description: >
   Convention de génération/mise à jour d'un CHANGELOG.md, basée sur Keep a Changelog et
   Semantic Versioning. À utiliser à chaque changement notable pour l'utilisateur du projet

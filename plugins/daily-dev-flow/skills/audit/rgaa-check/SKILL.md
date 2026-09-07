@@ -4,6 +4,7 @@ description: >
   Détecte et corrige la conformité RGAA 4.1 sur les fichiers HTML/JSX/TSX/Vue modifiés par la
   session en cours. Corrige directement les fichiers, pas de rapport versionné. Skill autonome,
   invocable à tout moment — pas une étape automatique de /ticket.
+disable-model-invocation: true
 ---
 
 # rgaa-check
@@ -27,6 +28,6 @@ signalement — cohérent avec le comportement du skill global source.
 
 ## Pas de rapport versionné
 
-Contrairement à `security-audit`/`openapi-doc`, cette skill ne produit pas de fichier dans
+Contrairement à `security-audit`/`generate-openapi`, cette skill ne produit pas de fichier dans
 `.sohub-claude-plugin/` : les corrections sont directement dans le code, visibles via `git
 diff`. Un rapport séparé serait une trace redondante avec l'historique git.

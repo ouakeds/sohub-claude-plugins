@@ -4,6 +4,7 @@ description: >
   Détecte langage, framework, outil de build et gestionnaire de paquets du projet cible (ou
   d'un sous-projet en monorepo) à partir de ses fichiers manifestes. Utilisée en interne par la
   commande /ticket, une seule fois par ticket — jamais invoquée directement par l'utilisateur.
+user-invocable: false
 ---
 
 # detect-stack

@@ -1,14 +1,16 @@
 ---
-name: openapi-doc
+name: generate-openapi
 description: >
   Génère ou rafraîchit la documentation OpenAPI 3.1 à partir du code source, écrite en version
   dans .sohub-claude-plugin/documentations/. Skill autonome, invocable à tout moment — pas une
   étape automatique de /ticket.
+disable-model-invocation: true
 ---
 
-# openapi-doc
+# generate-openapi
 
-Adaptation du skill `generate-openapi` global de l'utilisateur, propre à ce plugin : au lieu
+Adaptation du skill `generate-openapi` global de l'utilisateur (hors plugin), propre à ce
+plugin : au lieu
 d'un fichier unique écrasé à chaque génération, chaque exécution produit une nouvelle version
 horodatée/numérotée dans le projet cible.
 

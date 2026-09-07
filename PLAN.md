@@ -120,7 +120,7 @@ claude-dev-plugin/                          # dépôt = marketplace
         │   ├── build-check/                # lance le build détecté, parse le résultat (utilisée par /ticket)
         │   ├── rgaa-check/                 # vérifie et corrige la conformité RGAA 4.1 sur les fichiers modifiés
         │   ├── security-audit/             # audit sécurité (diff courant ou repo complet), rapport versionné
-        │   └── openapi-doc/                # génère/rafraîchit la doc OpenAPI, versionnée
+        │   └── generate-openapi/           # génère/rafraîchit la doc OpenAPI, versionnée
         ├── commands/
         │   └── ticket.md                   # /ticket "<texte>" — orchestrateur : découpe, routage, boucle build
         └── CLAUDE.md                       # conventions internes du plugin daily-dev-flow
@@ -151,7 +151,7 @@ adaptés pour écrire leur sortie versionnée dans `.sohub-claude-plugin/`.
   l'utilisateur) : vulnérabilités OWASP, secrets exposés, injections, mauvaises configs. Rédige un
   rapport dans `.sohub-claude-plugin/audit/NNNN-<slug>.md` (jamais écrasé) et propose d'appliquer les
   correctifs trouvés.
-- **`openapi-doc`** — génère/rafraîchit la documentation OpenAPI 3.1 à partir du code source, écrite
+- **`generate-openapi`** — génère/rafraîchit la documentation OpenAPI 3.1 à partir du code source, écrite
   dans `.sohub-claude-plugin/documentations/NNNN-openapi.json`.
 
 ## Hors scope v1
