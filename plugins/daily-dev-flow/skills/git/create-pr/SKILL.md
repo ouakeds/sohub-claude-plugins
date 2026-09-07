@@ -51,7 +51,10 @@ Interdit absolu : contourner le garde-fou. Ni `git -c`, ni alias, ni script wrap
   majuscule initiale, **pas de point final**, ≤ 50 caractères (72 maximum).
 - **corps** — optionnel, séparé par une ligne vide, lignes coupées à 72 caractères. Il explique
   **quoi et pourquoi**, jamais comment : le comment est déjà dans le diff.
-- **footers** — `BREAKING CHANGE: <raison>`, `Refs: #123`, `Co-Authored-By: ...`.
+- **footers** — `BREAKING CHANGE: <raison>`, `Refs: #123`, `Co-Authored-By: ...`. N'ajouter
+  que des trailers déjà en usage dans l'historique du dépôt, et **jamais d'identifiant de
+  session, d'URL de conversation ou de lien vers un outil interne** : le message de commit est
+  public et immuable, il ne transporte que ce qui aide à relire le code dans dix ans.
 
 ### Types
 
@@ -188,6 +191,8 @@ Règles de rédaction :
 - Travail incomplet → le signaler comme brouillon (draft) dans la remise, avec ce qui reste.
 - Ne rien affirmer d'invérifié dans le corps : si les tests n'ont pas été lancés, la section
   « Comment tester » donne la commande, elle ne prétend pas qu'elle est passée.
+- Aucun identifiant de session, URL de conversation ou lien vers un outil interne, ni dans le
+  corps ni dans les commits que la PR embarque — même règle que pour les trailers.
 
 ### 6. Remise à l'utilisateur
 

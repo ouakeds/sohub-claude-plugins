@@ -38,7 +38,9 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
   `glab` ou API) : la publication reste un geste de l'utilisateur, sous son identité. Elle
   s'arrête si le garde-fou `git` refuse le commit, sans jamais le contourner. Comble au passage
   les renvois de `README.md`, `generate-readme` et `generate-changelog` vers une skill
-  `commit-convention` qui n'avait jamais été écrite.
+  `commit-convention` qui n'avait jamais été écrite. Les trailers de commit sont bornés à ceux
+  déjà en usage dans le dépôt : ni identifiant de session, ni URL de conversation, ni lien vers
+  un outil interne, ni dans les commits ni dans le corps de la PR.
 
 ### Fixed
 - Reprise après interruption : le `resume` de chaque sous-tâche `done` est désormais écrit dans
