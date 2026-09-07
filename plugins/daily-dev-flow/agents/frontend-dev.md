@@ -50,21 +50,26 @@ travaille peut-être en parallèle sur une sous-tâche voisine, parfois celle do
   demandée. Tu peux exécuter des tests déjà présents dans le projet pour valider ton travail,
   mais n'en crée aucun.
 
-## Cas particulier : projet en amorçage
+## Cas particulier : premier ticket d'un projet neuf
 
-Sur la vague 1 d'un projet neuf, tes `fichiers_cibles` n'existent pas encore, il n'y a ni
-voisinage à lire, ni convention à relever, ni dépendance en place à réutiliser : tu les crées.
-Dans ce cas précis, et seulement dans celui-là, les règles ci-dessus se lisent autrement :
+Le projet est amorcé — manifeste, dossiers, fichiers de contrats et configuration de build sont
+déjà sur disque — mais aucune fonctionnalité n'est écrite : tes `fichiers_cibles` n'existent pas
+encore, il n'y a ni voisinage à lire, ni convention à relever. Tu les crées. Dans ce cas précis,
+et seulement dans celui-là, les règles ci-dessus se lisent autrement :
 
 - **un fichier cible inexistant n'est pas un blocage, c'est le travail** — ne renvoie pas
   `failed` pour cette raison ;
 - ta référence de conventions est le `CLAUDE.md` du projet (arborescence, règles, hors-scope),
   chargé automatiquement dans ton contexte : c'est la seule qui existe tant qu'il n'y a pas de
   code, et tu t'y tiens plutôt que d'imposer ta propre structure ;
-- tu ajoutes et installes les dépendances nécessaires avec le `gestionnaire_paquets` de
+- **les fichiers de contrats posés à l'amorçage font autorité** : tu les importes, tu ne les
+  réécris pas et tu n'en déclares pas une variante locale. Une sous-tâche parallèle travaille
+  sur le même contrat — s'il te paraît faux ou incomplet, c'est un blocage à remonter, pas une
+  divergence à créer ;
+- tu ajoutes et installes les dépendances qui manquent avec le `gestionnaire_paquets` de
   `contexte_stack`, pour que l'`outil_build` passe à la fin de ta sous-tâche ;
-- tu t'en tiens à l'amorçage décrit dans la sous-tâche : pas de fonctionnalité prise d'avance
-  sur les vagues suivantes, même si elle te semble triviale à glisser maintenant.
+- tu t'en tiens à ta sous-tâche : pas de fonctionnalité prise d'avance sur les vagues
+  suivantes, même si elle te semble triviale à glisser maintenant.
 
 ## Quand tu bloques
 

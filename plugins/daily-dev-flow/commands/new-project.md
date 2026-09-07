@@ -1,5 +1,5 @@
 ---
-description: Qualifie un projet neuf avec l'utilisateur jusqu'à cadrage fermé (besoin, périmètre, critères de validation, stack, contrats d'architecture) et l'écrit — docs/ détaillé + CLAUDE.md résumé.
+description: Qualifie un projet neuf avec l'utilisateur jusqu'à cadrage fermé (besoin, périmètre, critères de validation, stack, contrats d'architecture), l'écrit — docs/ détaillé + CLAUDE.md résumé — puis amorce le projet et projette le périmètre en lots de travail numérotés.
 argument-hint: "<idée de projet>" [--auto]
 disable-model-invocation: true
 ---
@@ -14,8 +14,12 @@ même lecteur ni le même coût.
 - `CLAUDE.md` — le résumé opérationnel, rechargé dans le contexte de **chaque agent à chaque
   tour** : chaque ligne inutile y est payée des centaines de fois sur la vie du projet.
 
-Tu ne crées aucun fichier de code, aucun manifeste, aucune dépendance. L'amorçage du projet est
-le travail du premier `/ticket`.
+Jusqu'à l'étape 10, tu n'écris pas une ligne de code : le cadrage se ferme avant que quoi que
+ce soit soit implémenté. Les deux dernières étapes projettent ensuite ce cadrage, mécaniquement
+et sans rien y ajouter : l'étape 11 pose l'ossature sur le disque (manifeste, dépendances,
+dossiers, contrats, configuration de build), l'étape 12 découpe le périmètre en lots de travail
+numérotés. Ni l'une ni l'autre n'implémente un item du périmètre — c'est le travail de
+`/ticket`.
 
 **Le critère de fin n'est pas « j'ai écrit trois fichiers », c'est « il ne reste rien à
 deviner ».** Le prochain `/ticket` découpe en sous-tâches et lance des agents en parallèle à
@@ -145,6 +149,27 @@ seule, et uniquement sur ce que le projet consomme réellement.
   servent à **filtrer les options** que tu proposeras à l'étape 4, pas à trancher à la place de
   l'utilisateur.
 
+**Une recherche qui ne renvoie rien n'établit pas une absence.** Elle établit que *ta requête*
+n'a rien trouvé — ce que produit tout aussi bien un motif erroné, un mauvais dossier ou un nom
+d'outil obsolète. C'est la bascule la plus coûteuse du cadrage : un résultat vide se promeut en
+« vérifié : ça n'existe pas », puis en hypothèse structurante, puis en règle impérative dans
+`CLAUDE.md` — trois fois la même erreur, chaque fois avec plus d'autorité, et plus rien ensuite
+ne la rouvre.
+
+Avant de conclure à une absence, deux gestes obligatoires :
+
+- **Valide ton motif sur un cas positif connu.** Une recherche qui ne trouve jamais rien, nulle
+  part, ne prouve rien : elle se comporte exactement comme une recherche fausse. Fais-la d'abord
+  ressortir une occurrence que tu sais présente ; si tu n'y arrives pas, c'est ton motif qui est
+  en cause, pas la réalité.
+- **Élargis d'un cran, une fois.** Les sous-dossiers et pas la seule racine ; la forme compacte
+  d'un format sérialisé (`"clé":valeur`) autant que la forme espacée ; le nom **actuel** de ce
+  que tu cherches — outil, champ, endpoint — et non celui dont tu te souviens.
+
+Si aucun cas positif ne sort de ces deux gestes, la ligne **n'est pas vérifiée** : elle
+redescend en question fermée (étape 6). Écrire « constaté absent » sur la foi d'une recherche
+vide est une affirmation non sourcée, au même titre qu'un chiffre inventé.
+
 Ce que la vérification échoue à établir ne devient pas une supposition silencieuse : c'est une
 question (étape 6) ou une hypothèse résiduelle marquée. Ne lance ni `researcher`, ni
 `detect-stack` : tu n'analyses pas un code source, tu vérifies des faits.
@@ -245,18 +270,19 @@ corrige un point, rouvre la ligne concernée, referme-la, et représente la fich
 À la racine du projet cible, versionné avec lui — à ne pas confondre avec
 `.sohub-claude-plugin/`, qui est gitignoré et ne contient que des traces d'exécution du plugin.
 
-**Chaque fichier a son gabarit**, dans `${CLAUDE_PLUGIN_ROOT}/templates/` : `cadrage.md`,
-`architecture.md`, `decisions.md`, `CLAUDE.template.md`. Ce sont des squelettes nus — titres,
-ordre des sections, forme des tableaux, marqueurs `<…>` à remplacer. Lis celui du fichier que
-tu écris, remplace les marqueurs, retire les sections déclarées optionnelles quand elles sont
-vides, et **n'invente pas de section supplémentaire** : c'est cette structure identique d'un
-projet à l'autre qui permet à un agent d'ouvrir n'importe quel `docs/architecture.md` et de
-savoir où regarder. Les gabarits ne portent aucune consigne de remplissage : elles sont ici,
-dans les sous-sections qui suivent.
+**Chaque fichier a son gabarit**, dans `${CLAUDE_PLUGIN_ROOT}/templates/` :
+`cadrage.template.md`, `architecture.template.md`, `decisions.template.md`,
+`CLAUDE.template.md`. Ce sont des squelettes nus — titres, ordre des sections, forme des
+tableaux, marqueurs `<…>` à remplacer. Lis celui du fichier que tu écris, remplace les
+marqueurs, retire les sections déclarées optionnelles quand elles sont vides, et **n'invente
+pas de section supplémentaire** : c'est cette structure identique d'un projet à l'autre qui
+permet à un agent d'ouvrir n'importe quel `docs/architecture.md` et de savoir où regarder. Les
+gabarits ne portent aucune consigne de remplissage : elles sont ici, dans les sous-sections
+qui suivent.
 
 ### `docs/cadrage.md` — le *pourquoi*
 
-Gabarit : `templates/cadrage.md`. Trois pièges au remplissage :
+Gabarit : `templates/cadrage.template.md`. Trois pièges au remplissage :
 
 - la table `## Critères de validation` reprend **mot pour mot** les critères déjà portés par les
   items du `Dans` — deux formulations du même critère, c'est deux critères ;
@@ -267,7 +293,8 @@ Gabarit : `templates/cadrage.md`. Trois pièges au remplissage :
 
 ### `docs/architecture.md` — le *comment*
 
-Gabarit : `templates/architecture.md`. C'est un plan d'implémentation, pas un survol — deux
+Gabarit : `templates/architecture.template.md`. C'est un plan d'implémentation, pas un survol —
+deux
 sections font tout le travail :
 
 - **Contrats** : *tout ce qui traverse une frontière de module est écrit en dur*, avec sa
@@ -285,25 +312,24 @@ porte son bloc `> Hypothèse` et sa conduite à tenir.
 
 ### `docs/decisions.md` — le journal, **append-only**
 
-Gabarit : `templates/decisions.md`. Chaque brique de stack de l'étape 4 y a son entrée, chaque
-objection maintenue par l'utilisateur aussi, chaque délégation avec sa mention
+Gabarit : `templates/decisions.template.md`. Chaque brique de stack de l'étape 4 y a son entrée,
+chaque objection maintenue par l'utilisateur aussi, chaque délégation avec sa mention
 `délégué par l'utilisateur`. Les tickets suivants y ajoutent des entrées, ils n'en réécrivent
 jamais. C'est ici que vit tout ce qui explique et justifie — donc tout ce qui n'a rien à faire
 dans `CLAUDE.md`.
 
 **Pas de `README.md` à cette étape** : il n'y a encore rien à installer ni à lancer, une
-section Installation y serait de la fiction. Il est généré au scaffold, par la skill
-`generate-readme`, dans la vague 1 du premier `/ticket`.
+section Installation y serait de la fiction. Il est écrit à l'étape 11, une fois le manifeste
+et les commandes réellement posés, par la skill `generate-readme`.
 
 ## Étape 9 — écrire `CLAUDE.md`, le résumé
 
 **Budget : une page écran, ~40 lignes.** Court, impératif, factuel — c'est un contrat de
 travail pour les agents, pas une présentation du projet.
 
-Le gabarit est `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.template.md` (nommé ainsi, et non
-`CLAUDE.md`, pour ne pas être chargé comme mémoire de répertoire quand on travaille dans le
-plugin). Ses six sections sont le contrat : `Commandes`, `Stack`, `Arborescence`, `Règles`,
-`Hors scope`, `Documentation`. N'en ajoute pas.
+Le gabarit est `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.template.md`. Ses six sections sont le
+contrat : `Commandes`, `Stack`, `Arborescence`, `Règles`, `Hors scope`, `Documentation`.
+N'en ajoute pas.
 
 **N'utilise jamais la syntaxe d'import `@chemin`** pour pointer vers `docs/` : `@docs/cadrage.md`
 injecterait le fichier entier dans le contexte à chaque tour, c'est-à-dire exactement ce que
@@ -331,9 +357,86 @@ différées avec leur déclencheur : c'est la partie que l'utilisateur doit reli
 la noyer dans le résumé revient à la faire disparaître. Si tu n'as vérifié aucun des faits dont
 dépend le projet, dis-le.
 
-Termine en indiquant la suite : `/ticket "<première fonctionnalité>"`, dont la vague 1 amorcera
-le projet (manifeste, dépendances, arborescence conforme au cadrage, point d'entrée, README).
-Ne lance pas `/ticket` toi-même.
+Cette remise porte sur le cadrage seul, et elle ne se termine pas par une action à demander :
+enchaîne toi-même sur l'étape 11, qui amorce le projet.
+
+## Étape 11 — amorcer le projet
+
+Le cadrage étant fermé, l'ossature du projet est déjà décidée : il ne reste qu'à la poser sur
+le disque. Ce geste ne demande aucun arbitrage — il ne peut donc rien apprendre à un agent
+qu'il ne lirait pas dans `docs/`. Le déléguer au premier `/ticket` y coûtait une vague entière
+et un agent pour recopier ce que tu viens d'écrire, en sérialisant tout le reste derrière lui.
+
+Tu l'exécutes toi-même, en ligne, sans agent.
+
+**Ce que tu écris, et rien d'autre :**
+
+- le **manifeste** du gestionnaire de paquets tranché à l'étape 4, avec les scripts exacts de
+  la section `Commandes` de `CLAUDE.md` — aucun script en plus ;
+- les **dépendances** de la stack, installées par la commande d'installation du cadrage. Les
+  versions sont celles que le gestionnaire résout : tu n'en épingles aucune que l'utilisateur
+  n'ait choisie ;
+- les **dossiers** de l'arborescence de `docs/architecture.md` ;
+- les **fichiers de contrats** — types partagés, schémas, constantes d'interface — **recopiés
+  tels quels** depuis la section Contrats de `docs/architecture.md`. C'est la pièce qui compte :
+  un contrat posé sur disque est un contrat que deux agents lancés en parallèle ne peuvent plus
+  inventer chacun de leur côté, donc une dépendance de moins entre les sous-tâches du premier
+  ticket ;
+- la **configuration de build et d'outillage** — compilateur, bundler, style, ports, proxy —
+  telle que le cadrage la fixe ;
+- le **point d'entrée** de chaque exécutable, réduit à ce qui le fait démarrer ;
+- le `.gitignore` : au minimum les artefacts de build, les dépendances installées et
+  `.sohub-claude-plugin/` ;
+- le `README.md`, via la skill `generate-readme`.
+
+**Ce que tu n'écris jamais** : un fichier de l'arborescence qui porte un item du périmètre —
+vue, écran, composant, module métier, endpoint. Pas même vide, pas même « provisoire ». Un
+placeholder est payé deux fois — tu l'écris, un agent le réécrit — et surtout il met le même
+fichier dans les `fichiers_cibles` de deux sous-tâches, ce qui interdit exactement le
+parallélisme que cette étape existe pour rendre possible. La règle de tri est mécanique : tu
+poses ce dont `docs/` fixe déjà la **forme**, tu laisses tout ce dont il ne fixe que le
+**rôle**.
+
+**Puis lance l'installation et le build** du cadrage. C'est le premier moment où il devient
+falsifiable : une stack dont les briques ne s'installent pas ensemble tombe ici, en une
+question à l'utilisateur, au lieu de tomber trois tentatives plus loin dans la boucle de
+correction du ticket 0001, sur un projet déjà à moitié écrit. Si ça casse, c'est un défaut du
+cadrage : corrige-le avec l'utilisateur et consigne l'arbitrage dans `docs/decisions.md` —
+jamais un contournement silencieux glissé dans un fichier de configuration.
+
+**N'écrase aucun fichier existant** à cette étape : un projet déjà amorcé se complète, il ne se
+réinitialise pas.
+
+Donne le résultat du build en une ligne, puis enchaîne sur l'étape 12.
+
+## Étape 12 — projeter le périmètre en lots de travail
+
+Le cadrage décrit **tout** le travail, pas seulement la première fonctionnalité. Tant qu'il
+reste de la prose, l'utilisateur n'a rien à suivre et chaque `/ticket` re-dérive le même
+découpage depuis les mêmes fichiers. Projette-le une fois, avant de rendre la main.
+
+Invoque la skill `generate-backlog`. Les règles de lotissement, la numérotation et la forme de
+la vue vivent là, pas ici — pour la même raison que les gabarits : une procédure n'occupe la
+fenêtre que quand on s'en sert.
+
+Elle écrit un fichier par lot dans `.sohub-claude-plugin/plans/` du projet cible, à l'état
+`todo` — besoin, critères de validation recopiés du cadrage, fichiers prévus, dépendances, et
+**avec quels autres lots celui-ci est parallélisable** — plus la vue `BACKLOG.md`, qui en tire
+les vagues de lots et ceux qui sont prêts à partir. Chacun de ces fichiers **est** le ticket de son lot : `/ticket` le
+complétera au lancement au lieu d'en créer un autre. Hors `--auto`, la skill te fait valider la
+table des lots avant d'écrire.
+
+Termine par cette table, puis par **une seule action à faire**, écrite comme une commande à
+copier, sur sa propre ligne et préfixée du nom du plugin :
+
+```
+/daily-dev-flow:ticket 0001
+```
+
+Le préfixe `daily-dev-flow:` fait partie de la commande : c'est la forme qui résout toujours, là
+où `/ticket` seul dépend de l'absence d'une autre commande de ce nom. Le numéro suffit — le lot
+porte déjà son besoin, ses critères et ses fichiers, il n'y a plus rien à reformuler. **Ne lance
+pas la commande toi-même** — choisir par quoi commencer est un geste de l'utilisateur.
 
 ## Mode `--auto`
 
@@ -343,3 +446,6 @@ plus réversible, et **chaque arbitrage est consigné dans `docs/decisions.md`**
 contestable, jamais silencieux. Les objections que tu aurais posées y sont écrites aussi,
 plutôt que perdues. La règle « zéro hypothèse structurante » tient toujours : ce que tu ne peux
 pas vérifier, tu le tranches et tu le consignes — tu ne le laisses pas ouvert.
+
+Les étapes 11 et 12 s'exécutent à l'identique — elles recopient un cadrage fermé, elles ne
+tranchent rien : la gate de validation des lots est simplement sautée.

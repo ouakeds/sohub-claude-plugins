@@ -34,8 +34,17 @@ puis propagée aux agents).
 #### Usage
 
 ```
-/ticket "<texte du ticket>" [--auto]
+/new-project "<idée de projet>" [--auto]
+/ticket <NNNN> | "<texte du ticket>" [--auto]
 ```
+
+`/new-project` qualifie un projet neuf avec l'utilisateur (besoin, périmètre, stack, critères
+de validation), écrit son cadrage (`docs/` + `CLAUDE.md`), amorce le projet, puis projette le
+périmètre en **lots de travail numérotés** dans `.sohub-claude-plugin/plans/` — un fichier par
+lot, avec son statut, plus la vue `BACKLOG.md`.
+
+`/ticket` prend soit le **numéro d'un lot** du backlog, qu'il complète en place, soit le texte
+libre d'un ticket hors backlog.
 
 - Sans `--auto` : une gate de confirmation intervient avant le lancement des développements.
 - Avec `--auto` : le flux s'exécute de bout en bout sans interruption.
@@ -45,7 +54,7 @@ L'orchestrateur route vers les agents (`researcher`, `backend-dev`, `frontend-de
 
 | Catégorie | Skills | Rôle |
 | --- | --- | --- |
-| `skills/flow/` | `detect-stack`, `build-check` | outillage interne du flux `/ticket` |
+| `skills/flow/` | `detect-stack`, `build-check`, `generate-backlog` | outillage du flux : stack, build, et projection du cadrage en lots de travail |
 | `skills/documentation/` | `generate-openapi`, `generate-readme`, `generate-changelog` | génération/convention de la doc du projet cible |
 | `skills/audit/` | `rgaa-check`, `security-audit` | détection + correction de non-conformités |
 | `skills/git/` | `create-pr` | commits conventionnels, push de la branche courante, corps de PR prêt à coller |

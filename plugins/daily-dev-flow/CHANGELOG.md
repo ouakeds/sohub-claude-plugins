@@ -6,6 +6,103 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Le backlog est généré au cadrage, et le fichier de plan devient le ticket.** Nouvelle skill
+  `skills/flow/generate-backlog` : elle projette `docs/cadrage.md` et `docs/architecture.md` en
+  **lots de travail** — un fichier numéroté par lot dans `.sohub-claude-plugin/plans/`, à l'état
+  `todo`, portant le besoin, les critères de validation recopiés mot pour mot, les fichiers
+  prévus et les dépendances — puis rend la vue `plans/BACKLOG.md`. `/new-project` l'invoque à
+  son étape 12 et rend la main sur `/daily-dev-flow:ticket 0001`. Jusqu'ici, seule la
+  fonctionnalité qu'on venait de taper existait sur disque : les autres items du périmètre
+  n'avaient ni fichier, ni numéro, ni statut, et chaque `/ticket` re-dérivait le même découpage
+  depuis les mêmes `docs/`.
+- `/ticket` accepte un **numéro de lot** (`/daily-dev-flow:ticket 0003`) en plus du texte libre.
+  En mode lot planifié, il ne crée pas de fichier : il **complète celui du lot** (cible
+  technique, découpage, vagues, résultats) et fait passer son `Statut global` de `todo` à
+  `in_progress` puis à `done`. Le besoin et les critères viennent du cadrage et ne sont jamais
+  reformulés. Une **gate de dépendance** arrête le lancement d'un lot dont un `Dépend de:` n'est
+  pas `done`, en nommant celui à faire d'abord.
+- `todo` rejoint le vocabulaire de `Statut global` (`in_progress`, `done`, `failed`) : c'est le
+  seul état qui signifie « écrit, jamais lancé ». L'étape 0 de `/ticket` ne le propose pas en
+  reprise sur interruption.
+- **Chaque lot déclare avec qui il est parallélisable.** Nouveau champ d'en-tête
+  `Parallélisable avec:`, calculé par `generate-backlog` : deux lots qualifient quand aucun
+  n'est ancêtre ou descendant de l'autre dans le graphe des `Dépend de` — la transitivité
+  compte — **et** que leurs fichiers prévus sont disjoints. `Dépend de:` disait ce qui passe
+  avant, jamais ce qui peut tourner en même temps ; cette relecture se refaisait de tête à
+  chaque lancement. `BACKLOG.md` en tire une section **Vagues de lots** : ce qui est lançable
+  ensemble, et ce que chaque vague débloque. Réserve énoncée dans la skill : le parallélisme
+  porte sur les fichiers sources, pas sur l'outillage — deux `build-check` simultanés sur le
+  même dossier peuvent se gêner.
+- Nouveaux gabarits `templates/plan.template.md` — la forme d'un lot, écrite à deux mains
+  (`generate-backlog` pour l'en-tête et le besoin, `/ticket` pour le découpage et les
+  résultats) — et `templates/BACKLOG.template.md`, la forme de la vue d'ensemble : lots, vagues
+  de lots, lots prêts à partir, items du périmètre pas encore couverts.
+
+### Changed
+- **L'amorçage du projet passe de la vague 1 du premier `/ticket` à l'étape 11 de
+  `/new-project`.** Poser le manifeste, les dépendances, les dossiers, les fichiers de contrats
+  et la configuration de build ne demande aucun arbitrage : c'est la recopie de ce que le
+  cadrage vient de fixer. En faire une sous-tâche coûtait un agent et une **vague entière**,
+  derrière laquelle tout le reste du ticket était sérialisé. Le contrat partagé étant désormais
+  sur disque avant le découpage, le premier ticket démarre directement avec ses sous-tâches
+  backend et frontend **en parallèle en vague 1**. `/new-project` enchaîne l'installation et le
+  build, ce qui rend le cadrage falsifiable au moment où il se ferme : une stack dont les
+  briques ne s'installent pas ensemble tombe en une question, au lieu de tomber trois
+  tentatives plus loin dans la boucle de correction du ticket 0001 sur un projet à moitié
+  écrit.
+- L'amorçage a maintenant une **règle de tri explicite** : il pose ce dont `docs/` fixe déjà la
+  *forme* (manifeste, dossiers, contrats, configuration, point d'entrée), jamais un fichier
+  portant un item du périmètre — « pas même vide, pas même provisoire ». Un plan réel avait fait
+  écrire un `App.vue` provisoire par la sous-tâche d'amorçage puis réécrire par la sous-tâche
+  frontend : travail payé deux fois, et surtout même fichier dans les `fichiers_cibles` de deux
+  sous-tâches, ce qui interdit exactement le parallélisme recherché. L'étape 2 de `/ticket`
+  traite désormais ce recouvrement comme un défaut de découpage, pas comme une dépendance à
+  assumer.
+- `/ticket`, mode greenfield : la règle « vague 1 = une unique sous-tâche d'amorçage » est
+  remplacée par un amorçage **fait en ligne par l'orchestrateur** avant le découpage. Le cas ne
+  se présente plus que sur un cadrage interrompu avant son étape 11 ou un projet cadré par une
+  version antérieure du plugin — la couture par le `CLAUDE.md` du projet cible est inchangée.
+
+### Fixed
+- `README.md` était confié à la skill `generate-readme` **depuis une sous-tâche** d'amorçage,
+  alors que `backend-dev` et `frontend-dev` n'ont pas l'outil `Skill` dans leur frontmatter :
+  la consigne était inexécutable par l'agent qui la recevait. Sur un run réel, l'orchestrateur
+  l'a rattrapée à la main, au prix de deux recherches pour localiser la skill. Le README est
+  désormais écrit par la commande elle-même, qui a l'outil.
+- `/new-project`, étape 10 : la remise finale donnait la suite sous la forme `/ticket "<…>"`,
+  qui ne résout pas telle quelle — une commande de plugin se tape préfixée de son plugin. La
+  remise affiche désormais `/daily-dev-flow:ticket "<…>"` sur sa propre ligne, en bloc copiable,
+  avec la fonctionnalité **écrite en clair** plutôt qu'un marqueur à remplacer, et une seule
+  action à faire en clôture. Même correction dans `/ticket` en mode greenfield, qui renvoyait
+  vers `/new-project` sans préfixe.
+
+### Changed
+- Gabarits de `templates/` : **le suffixe `.template.md` devient la règle pour les quatre**.
+  `cadrage.md`, `architecture.md` et `decisions.md` deviennent `cadrage.template.md`,
+  `architecture.template.md` et `decisions.template.md` ; `CLAUDE.template.md` ne change pas.
+  Trois noms nus à côté d'un nom suffixé laissaient lire `templates/architecture.md` comme
+  « l'architecture du plugin » alors que c'est un squelette à remplir, et forçaient à défendre
+  le cas de `CLAUDE.template.md` comme une exception — à deux endroits. Le nom dit désormais
+  seul qu'il s'agit d'une forme, et la raison du suffixe est énoncée une fois, dans le
+  `CLAUDE.md` du plugin. Les fichiers **produits** dans le projet cible sont inchangés
+  (`docs/cadrage.md`, `docs/architecture.md`, `docs/decisions.md`, `CLAUDE.md`) : aucun impact
+  sur les projets déjà cadrés.
+
+## [0.2.1] - 2026-09-07
+
+### Changed
+- `/new-project`, étape 3 : **une recherche qui ne renvoie rien n'établit plus une absence**.
+  Un cadrage réel a conclu « aucune trace de sous-agent n'existe sur la machine » sur la foi
+  d'un `grep` qui cherchait un motif espacé dans du JSON compact, un nom d'outil abandonné, et
+  seulement à la racine des dossiers de session — alors que les traces existaient dans un
+  sous-dossier, y compris pour le projet en cours de cadrage. Le résultat vide est monté en
+  fait vérifié, puis en hypothèse structurante, puis en règle impérative dans le `CLAUDE.md`
+  produit. Avant de conclure à une absence, l'étape 3 impose désormais deux gestes : faire
+  ressortir un cas positif connu pour valider le motif, et élargir d'un cran (sous-dossiers,
+  forme compacte d'un format sérialisé, nom actuel de l'outil ou du champ). Sans cas positif,
+  la ligne redescend en question fermée plutôt qu'en constat.
+
 ## [0.2.0] - 2026-09-07
 
 ### Added
