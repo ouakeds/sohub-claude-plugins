@@ -61,6 +61,39 @@ Un gabarit se remplit, il ne s'étend pas : les sections déclarées optionnelle
 quand elles sont vides, aucune section n'est ajoutée. Changer la forme, c'est changer le
 gabarit — pas l'improviser dans un projet.
 
+## Conventions de qualité du code
+
+`conventions/` porte ce à quoi doit ressembler le code que le plugin écrit : `code-quality.md`
+(socle universel — nommage, taille des fonctions, segmentation, état, erreurs, commentaires),
+`backend.md` et `frontend.md` (une couche chacune), et `lang/<langage>.md` pour ce qui ne se dit
+qu'en TypeScript, en Java ou en Kotlin. `backend-dev` et `frontend-dev` les lisent en tête de
+sous-tâche, via `${CLAUDE_PLUGIN_ROOT}`.
+
+**Des fichiers lus, pas une skill** : les deux agents de développement n'ont pas l'outil `Skill`
+(même contrainte que pour `generate-readme`, cf. `commands/ticket.md`). Faire porter la
+convention par `/ticket`, qui la recopierait dans chaque payload, la ferait payer une fois par
+sous-tâche et par vague — exactement ce que la règle « ne recopie rien de `CLAUDE.md` ni de
+`docs/` » interdit. **Et pas non plus inline dans les deux fiches d'agent** : le tronc commun y
+serait dupliqué, donc voué à diverger, et la partie propre à un langage y serait hardcodée.
+
+C'est ce qui réconcilie la convention avec le principe **générique multi-stack** : le fichier de
+langage est *sélectionné* par `contexte_stack.langage` — détecté une seule fois en amont — il
+n'est jamais *encodé* dans un agent. Un langage de plus est un fichier de plus et une ligne dans
+le tableau en fin de `code-quality.md` ; aucun agent ne bouge. Un langage sans fichier n'est pas
+un blocage : le socle et le code réel suffisent.
+
+**La préséance est la moitié de la valeur du dispositif** : code réel du voisinage > `docs/` et
+`CLAUDE.md` du projet cible > fichier de langage > socle. Le plus spécifique gagne — un socle
+qui passerait devant le projet ferait réécrire du code existant au nom du style, et mettrait deux
+sous-tâches parallèles sur les mêmes fichiers. D'où la règle jumelle, répétée dans le socle comme
+dans les deux fiches d'agent : la convention porte sur le code qu'on écrit, jamais sur une passe
+de nettoyage du code alentour.
+
+Le levier réellement déterministe reste l'outillage (linter, formateur) branché sur
+`build-check` : ces fichiers cadrent, ils ne contraignent pas. Ils ne dispensent pas non plus le
+projet d'écrire ses propres règles dans `docs/architecture.md` § Conventions, qui reste la seule
+section à porter ce qui est propre à lui.
+
 ## Deux commandes, une couture
 
 - `/new-project` — cadrage d'un projet neuf : conversation avec l'utilisateur pour qualifier le
