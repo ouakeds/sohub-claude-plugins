@@ -1,0 +1,11 @@
+{
+  "_comment": [
+    "Configuration daily-dev-flow du projet cible. Copiez ce fichier en .sohub-claude-plugin.json",
+    "a la racine du projet (versionne, a ne pas confondre avec le dossier .sohub-claude-plugin/",
+    "qui contient les artefacts generes et reste gitignore).",
+    "Chaque garde-fou est actif par defaut : une cle absente vaut true."
+  ],
+  "guards": {
+    "git": true
+  }
+}

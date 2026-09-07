@@ -1,5 +1,5 @@
 {
-  "description": "Garde-fous daily-dev-flow : interdiction de commit/push git, interdiction de lecture des variables d'environnement privees du projet cible.",
+  "description": "Garde-fous daily-dev-flow : interdiction de commit/push git (actif par defaut, desactivable par garde-fou via .sohub-claude-plugin.json), interdiction de lecture des variables d'environnement privees du projet cible (non desactivable).",
   "hooks": {
     "PreToolUse": [
       {

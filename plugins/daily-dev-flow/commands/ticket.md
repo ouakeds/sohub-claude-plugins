@@ -29,7 +29,12 @@ avec `Statut global: in_progress`. S'il en existe un :
 - Propose à l'utilisateur de reprendre à la première vague non `done`, ou d'abandonner ce plan
   pour en démarrer un nouveau.
 - Si reprise : saute directement à l'étape 4 en repartant du plan existant (ne relance ni
-  `researcher` ni le découpage).
+  `researcher` ni le découpage). Relis d'abord la section `## Résultats` du plan : elle contient
+  les `resume` des sous-tâches déjà `done`, dont tu tireras les `contexte_dependance` des vagues
+  restantes. Si un `resume` attendu y manque (plan écrit avant cette convention, ou vague
+  interrompue en cours d'écriture), ne l'invente pas : signale-le et laisse la sous-tâche
+  consommatrice partir sans `contexte_dependance` — son agent sait alors qu'il doit aller lire
+  le code produit plutôt que supposer un contrat.
 - Si abandon : continue normalement depuis l'étape 1 (le fichier de plan existant reste tel
   quel, il ne sera pas modifié — un nouveau plan est écrit à part).
 
@@ -103,10 +108,12 @@ greenfield), produis une liste de sous-tâches :
   vague 2 = dépendances toutes dans la vague 1, etc. C'est ce regroupement qui pilote le
   parallélisme de l'étape 4.
 - Pour chaque sous-tâche, prépare déjà le `contexte_researcher` filtré qui lui sera transmis :
-  le `besoin_fonctionnel` global + le sous-ensemble de `symboles`/`notes` de `researcher` qui
-  mentionnent un fichier présent dans les `fichiers_cibles` de cette sous-tâche précise. Ne
-  redonne jamais le digest complet à chaque sous-tâche — c'est du bruit et du coût token inutile
-  pour une sous-tâche qui ne touche qu'un sous-ensemble des fichiers.
+  le `besoin_fonctionnel` global, plus les entrées de `notes` dont le champ `fichiers` recoupe
+  les `fichiers_cibles` de cette sous-tâche, plus les `symboles` qui y apparaissent. Le
+  filtrage est mécanique — une intersection de listes, pas une reformulation : ne réécris ni ne
+  résume une note au passage, transmets-la telle quelle ou pas du tout. Ne redonne jamais le
+  digest complet à chaque sous-tâche : c'est du bruit et du coût token inutile pour une
+  sous-tâche qui ne touche qu'un sous-ensemble des fichiers.
 
 ## Étape 3 — écriture du plan + validation
 
@@ -120,7 +127,8 @@ greenfield), produis une liste de sous-tâches :
    technique` (fichiers/symboles du digest + `contexte_stack` une seule fois, pas répété par
    sous-tâche), `Découpage` (tableau des sous-tâches avec un champ `statut:
    pending|in_progress|done|failed`), `Vagues d'exécution` (chaque vague porte aussi un
-   `statut`), et un en-tête `Statut global: in_progress`.
+   `statut`), une section vide `## Résultats` qui se remplira à l'étape 4, et un en-tête
+   `Statut global: in_progress`.
 4. **Gate** (sautée si `--auto` a été passé) : affiche un résumé bref du plan (besoin +
    découpage + vagues) en texte, puis pose via `AskUserQuestion` : "Lancer l'implémentation de
    ce plan ?" avec les options `Oui, lancer` / `Modifier le découpage` / `Annuler`. N'avance à
@@ -143,9 +151,15 @@ Pour chaque vague, dans l'ordre :
    `depends_on` est non vide** : c'est le
    `resume` complet (objet structuré, pas de fichier de contrat intermédiaire sur disque) de la
    sous-tâche productrice correspondante. N'envoie pas cette clé du tout quand elle ne
-   s'applique pas.
+   s'applique pas. La source de ce `resume` est la section `## Résultats` du plan, pas ta seule
+   mémoire de conversation — c'est la même donnée, mais elle survit à une interruption.
 3. Après chaque sous-tâche terminée, mets à jour son `statut` (`done`/`failed`) dans le fichier
-   de plan. Une vague n'est marquée `done` que quand toutes ses sous-tâches le sont.
+   de plan, **et recopie son `resume` complet sous `## Résultats`**, en sous-section `### <id> —
+   <titre>`. Ce n'est pas de la trace : c'est ce que tu transmettras comme
+   `contexte_dependance` aux sous-tâches suivantes, et ta mémoire de session ne survit ni à un
+   `/clear` ni à une fermeture. Sans cette écriture, une reprise à l'étape 0 repart avec des
+   contrats de dépendance perdus. Une vague n'est marquée `done` que quand toutes ses
+   sous-tâches le sont.
 4. Si une sous-tâche échoue (`statut: failed`), marque la vague concernée `failed`, arrête le
    lancement des vagues suivantes, et remonte la `raison_echec` à l'utilisateur avant de
    décider de la suite (relance ciblée possible, mais pas automatique et silencieuse).

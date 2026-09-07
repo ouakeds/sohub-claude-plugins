@@ -15,9 +15,9 @@ que ce soit.
 ## Garde-fou : projet sans code
 
 Si la racine du projet ne contient aucun fichier de code source ni manifeste (projet neuf),
-il n'y a rien à rechercher : renvoie immédiatement le digest avec `fichiers_cibles: []`,
-`symboles: []`, `ambiguites: []` et une `notes` disant que le projet est vide — sans lancer ni
-recherche sémantique, ni construction de graphe, ni grep. `/ticket` n'est pas censé t'appeler
+il n'y a rien à rechercher : renvoie immédiatement le digest vide (`fichiers_cibles: []`,
+`symboles: []`, `notes: []`, `ambiguites: []`) — sans lancer ni recherche sémantique, ni
+construction de graphe, ni grep. `/ticket` n'est pas censé t'appeler
 dans ce cas ; si ça arrive, sors en un tour plutôt que d'explorer le vide.
 
 ## Stratégie de recherche
@@ -57,12 +57,24 @@ posée à l'utilisateur maintenant.
   "besoin_fonctionnel": "string — reformulation claire et concise du besoin",
   "fichiers_cibles": ["chemin/relatif/fichier.ext", "..."],
   "symboles": ["NomDeFonction", "NomDeComposant", "..."],
-  "notes": "string — contexte utile pour les devs (contraintes, patterns existants à respecter)",
+  "notes": [
+    { "fichiers": ["chemin/relatif/fichier.ext"], "note": "string — contrainte ou pattern existant à respecter" }
+  ],
   "ambiguites": [
     { "question": "string, fermée", "options": ["option A", "option B", "..."] }
   ]
 }
 ```
+
+`notes` : une liste, pas un paragraphe — chaque entrée porte les fichiers qu'elle concerne,
+pour que `/ticket` puisse la router vers la seule sous-tâche qui touche ces fichiers. Deux
+conséquences à respecter :
+
+- **une note se rattache toujours à au moins un fichier que tu as réellement consulté.** Une
+  note qui ne s'accroche à aucun fichier est presque toujours une généralité inventée ou
+  reformulée depuis le ticket — ne l'écris pas.
+- une note vaut pour le dev qui va modifier ces fichiers : une contrainte, un pattern en place,
+  un piège. Pas une description de ce que fait le code, qu'il lira lui-même.
 
 `ambiguites` : au maximum 3 questions, **fermées** (QCM à 2-3 options), jamais ouvertes — elles
 sont ensuite posées par `/ticket` via `AskUserQuestion`, qui gère mal une question ouverte.

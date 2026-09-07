@@ -31,6 +31,17 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
   Keep a Changelog / SemVer.
 
 ### Fixed
+- Reprise après interruption : le `resume` de chaque sous-tâche `done` est désormais écrit dans
+  la section `## Résultats` du fichier de plan. Il n'existait qu'en mémoire de session, si bien
+  qu'une reprise en vague 2 après un `/clear` repartait sans le `contexte_dependance` produit
+  par la vague 1.
+- Contrat `researcher` : `notes` passe d'une chaîne unique à une liste
+  `{fichiers, note}` — le filtrage par `fichiers_cibles` demandé à `/ticket` était impossible
+  sur un paragraphe, qui finissait renvoyé en entier à chaque sous-tâche. Chaque note doit
+  désormais se rattacher à un fichier réellement consulté.
+- Agents `backend-dev`/`frontend-dev` : section « projet en amorçage ». Leurs règles (lire le
+  voisinage, réutiliser les dépendances en place, `failed` sur fichier cible inexistant)
+  bloquaient la vague 1 d'un projet neuf, où tous les fichiers cibles sont à créer.
 - `/ticket` n'occupe plus des tours à attendre un agent (`sleep`, `echo waiting`) : règle
   explicite d'attente sans commande de remplissage.
 - Garde-fous symétriques dans `researcher` (sortie immédiate sur repo sans code) et
@@ -45,6 +56,17 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 ### Security
 - Hooks `PreToolUse` (`hooks/hooks.json`) interdisant tout commit/push git et toute lecture des
   variables d'environnement privées du projet cible (`.env*`, `env`, `printenv` sans argument).
+- Garde-fou git rendu **optionnel** : `hooks/scripts/lib/guard-config.sh` résout son état dans
+  l'ordre variable de session `DAILY_DEV_FLOW_GUARD_GIT` → `.sohub-claude-plugin.json` du projet
+  cible (cherché depuis le `cwd` puis en remontant l'arborescence, le plus proche gagne) →
+  `~/.claude/sohub-claude-plugin.json` → défaut actif. Une clé absente, un fichier illisible ou
+  un JSON cassé retombent sur « actif » : la désactivation ne peut être qu'explicite. Motif :
+  un garde-fou qu'on ne peut que contourner n'en est plus un, et le flux `/ticket` doit pouvoir
+  aller jusqu'au commit sur l'outillage interne ou un dépôt solo. Le garde-fou d'environnement
+  reste non désactivable — une fuite de secret ne se rattrape pas par un `git revert`.
+- `.sohub-claude-plugin.example.json` à la racine du dépôt : modèle commenté du fichier de
+  configuration, à ne pas confondre avec le dossier `.sohub-claude-plugin/` des artefacts
+  générés, lui gitignoré dans le projet cible.
 
 ## [0.1.0] - 2026-09-07
 

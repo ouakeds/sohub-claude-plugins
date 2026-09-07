@@ -62,13 +62,46 @@ le bénéfice de la découpe.
 
 `hooks/hooks.json` déclare des hooks `PreToolUse` (mécanisme documenté dans
 [Hooks](https://code.claude.com/docs/en/hooks) — deterministe, contrairement à une instruction
-CLAUDE.md qui reste indicative) qui bloquent, avec `exit 2` (blocage non négociable) :
+CLAUDE.md qui reste indicative) qui bloquent, avec `exit 2` :
 
-- **Tout commit/push git** — `Bash(git commit *)` et `Bash(git push *)` : ce plugin ne committe
-  ni ne pousse jamais à la place de l'utilisateur, y compris en flux `--auto`.
+- **Tout commit/push git** — `Bash(git commit *)` et `Bash(git push *)` : par défaut, ce plugin
+  ne committe ni ne pousse jamais à la place de l'utilisateur, y compris en flux `--auto`.
+  Seul garde-fou **désactivable** (cf. section suivante).
 - **Toute lecture de fichier d'environnement privé** — outil `Read` sur `.env*` (motif
   gitignore, matche à toute profondeur), plus les idiomes Bash les plus courants
   (`cat`/`head`/`tail .env*`) et le dump complet des variables (`env`/`printenv` sans argument).
+  **Non désactivable** : une fuite de secret est irréversible et ne se rattrape pas par un
+  `git revert`, contrairement à un commit de trop.
+
+### Configuration des garde-fous
+
+Le garde-fou git est optionnel parce qu'un garde-fou qu'on ne peut que contourner ne protège
+plus personne — il apprend juste à le contourner (`git -c ...`, un script wrapper). Sur
+l'outillage interne ou un dépôt solo, l'utilisateur veut explicitement que le flux aille
+jusqu'au commit ; mieux vaut un interrupteur déclaré, versionné et relisible en revue.
+
+L'état est résolu par `hooks/scripts/lib/guard-config.sh`, **premier trouvé gagne** :
+
+1. Variable `DAILY_DEV_FLOW_GUARD_GIT` exportée dans la session (`on`/`off`, `1`/`0`,
+   `true`/`false`) — échappatoire ponctuelle, ne survit pas à la session.
+2. `.sohub-claude-plugin.json` du projet cible, cherché depuis le `cwd` de la session puis en
+   remontant l'arborescence — la config la plus proche gagne. Fichier **versionné**, à ne pas
+   confondre avec le dossier `.sohub-claude-plugin/` des artefacts, lui gitignoré.
+3. `~/.claude/sohub-claude-plugin.json` — préférence utilisateur, tous projets confondus.
+4. Défaut : **garde-fou actif**. Une clé absente vaut `true`, un fichier illisible ou un JSON
+   cassé retombe sur le défaut : la seule façon de désactiver est de l'écrire explicitement.
+
+```json
+{ "guards": { "git": false } }
+```
+
+Le champ `guards` est le point d'extension : un nouveau garde-fou désactivable se branche avec
+`guard_is_enabled <nom> || exit 0` en tête de son script, sans toucher à `hooks.json`.
+
+**Piège jq** : `.guards[$g] // empty` est inutilisable pour lire ces clés — jq traite `false`
+comme une absence, or `false` est justement la valeur qui désactive. La lib teste la présence
+de la clé (`has($g)`). Le repli sans jq n'utilise pas non plus l'alternance `\(true\|false\)`,
+absente du sed BSD de macOS.
 
 **Limite connue** : les règles Bash sont des correspondances de préfixe littérales, pas des
 motifs de chemin — un accès détourné (`cat ./.env`, `python -c "open('.env').read()"`, un
@@ -91,9 +124,16 @@ de cible technique moins précise.
   sur un projet existant, arbitrée avec l'utilisateur par `/new-project` et lue dans le
   `CLAUDE.md` sur un projet neuf — puis propagée telle quelle, jamais redevinée.
 - **Contrats petits et filtrés** : un sous-agent ne reçoit jamais un digest complet quand un
-  sous-ensemble filtré suffit. Pas de fichier de contrat intermédiaire sur disque entre
-  sous-tâches dépendantes — la transmission se fait en mémoire par l'orchestrateur
-  (`commands/ticket.md`).
+  sous-ensemble filtré suffit. Le filtrage doit rester **mécanique** — `researcher` rattache
+  chaque note aux fichiers qu'elle concerne, `/ticket` intersecte avec les `fichiers_cibles` et
+  transmet tel quel, sans reformuler (une paraphrase intermédiaire perd des contraintes et en
+  invente).
+- **Le plan est le support de reprise, donc il porte les `resume`** : les contrats produits par
+  les sous-tâches `done` sont écrits dans le fichier de plan, pas seulement gardés en mémoire
+  par l'orchestrateur. C'est la seule chose qui survit à un `/clear` ou à une fermeture de
+  session ; sans elle, une reprise en vague 2 repart sans le contrat de la vague 1. Il n'y a
+  pour autant pas de fichier de contrat *séparé* : c'est une section du plan, pas un artefact
+  de plus.
 - **Pas d'hypothèse silencieuse** : une cible technique ambiguë, un contrat backend manquant,
   une incohérence bloquante → l'agent s'arrête et remonte (`ambiguites`, `statut: failed`),
   jamais une implémentation approximative "pour rendre quelque chose".

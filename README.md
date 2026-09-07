@@ -53,10 +53,21 @@ L'orchestrateur route vers les agents (`researcher`, `backend-dev`, `frontend-de
 
 #### Garde-fous
 
-Le plugin refuse systématiquement (hooks `PreToolUse`, cf. `plugins/daily-dev-flow/CLAUDE.md`) :
-- tout commit ou push git ;
+Le plugin refuse par défaut (hooks `PreToolUse`, cf. `plugins/daily-dev-flow/CLAUDE.md`) :
+- tout commit ou push git — **désactivable** ;
 - toute lecture des variables d'environnement privées du projet cible (`.env*`, `env`,
-  `printenv`).
+  `printenv`) — non désactivable.
+
+Pour autoriser le plugin à committer sur un dépôt donné, posez un `.sohub-claude-plugin.json` à
+sa racine (modèle : [`.sohub-claude-plugin.example.json`](.sohub-claude-plugin.example.json)) :
+
+```json
+{ "guards": { "git": false } }
+```
+
+Le même fichier placé en `~/.claude/sohub-claude-plugin.json` vaut pour tous vos projets, et
+`DAILY_DEV_FLOW_GUARD_GIT=off` pour la seule session en cours. Un garde-fou absent de la config
+reste actif : la désactivation est toujours explicite.
 
 #### Artefacts générés
 
