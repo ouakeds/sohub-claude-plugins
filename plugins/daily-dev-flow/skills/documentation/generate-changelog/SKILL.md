@@ -9,7 +9,7 @@ description: >
 # Convention CHANGELOG.md
 
 Source : [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/), combinée à
-[Semantic Versioning](https://semver.org/) et à la skill `commit-convention` (Conventional
+[Semantic Versioning](https://semver.org/) et à la skill `create-pr` (Conventional
 Commits) pour le mapping type de commit → catégorie de changelog.
 
 ## Principe
@@ -62,7 +62,7 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 - `Fixed` — corrections de bug
 - `Security` — correctifs de vulnérabilité (toujours signalés, même en version patch)
 
-## Mapping avec `commit-convention`
+## Mapping avec `create-pr`
 
 | Type de commit       | Catégorie changelog |
 |-----------------------|---------------------|
@@ -88,5 +88,5 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 
 - Ne décide pas du numéro de version à publier (dépend du processus de release du projet, hors
   scope).
-- Ne remplace pas les messages de commit (cf. `commit-convention`) — le changelog est un
+- Ne remplace pas les messages de commit (cf. `create-pr`) — le changelog est un
   résumé à destination utilisateur, pas un miroir de l'historique Git.

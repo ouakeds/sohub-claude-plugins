@@ -48,6 +48,7 @@ L'orchestrateur route vers les agents (`researcher`, `backend-dev`, `frontend-de
 | `skills/flow/` | `detect-stack`, `build-check` | outillage interne du flux `/ticket` |
 | `skills/documentation/` | `generate-openapi`, `generate-readme`, `generate-changelog` | génération/convention de la doc du projet cible |
 | `skills/audit/` | `rgaa-check`, `security-audit` | détection + correction de non-conformités |
+| `skills/git/` | `create-pr` | commits conventionnels, push de la branche courante, corps de PR prêt à coller |
 
 ... sans jamais redonner à un sous-agent plus de contexte qu'il n'en a besoin.
 
@@ -89,7 +90,7 @@ complet.
 ## Contribuer
 
 Convention de commit : [Conventional Commits](https://www.conventionalcommits.org/) (cf. skill
-`commit-convention` du plugin). Chaque plugin embarque son propre `CHANGELOG.md`.
+`create-pr` du plugin). Chaque plugin embarque son propre `CHANGELOG.md`.
 
 ## Changelog
 

@@ -5,6 +5,7 @@
   "skills": [
     "./skills/flow/",
     "./skills/documentation/",
-    "./skills/audit/"
+    "./skills/audit/",
+    "./skills/git/"
   ]
 }
