@@ -1,0 +1,5 @@
+{
+  "name": "claude-dev-plugin",
+  "version": "0.1.0",
+  "description": "Flux ticket → analyse → développement → vérification de build, générique multi-stack, orchestré par /ticket."
+}
