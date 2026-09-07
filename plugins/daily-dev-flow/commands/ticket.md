@@ -65,15 +65,23 @@ nominal du premier ticket après `/new-project` :
    commande de build qui y figure, `fichier_manifeste` celui qui **sera créé**. N'appelle pas
    `detect-stack` pour la retrouver, il n'a rien à lire.
 2. Le digest se réduit au besoin du ticket et aux contraintes qui le concernent :
-   `fichiers_cibles = []`, `symboles = []`, tout est à créer. N'ouvre `docs/cadrage.md` ou
-   `docs/architecture.md` que si le ticket sort de ce que `CLAUDE.md` résume — ils existent
-   pour être lus à la demande, pas systématiquement.
-3. L'étape 2 s'applique ensuite, avec trois différences :
+   `fichiers_cibles = []`, `symboles = []`, tout est à créer. Sur ce premier ticket, `docs/`
+   **est** la matière du découpage, pas une lecture optionnelle : ouvre une fois
+   `docs/architecture.md` (modules, contrats, arborescence au fichier près) et
+   `docs/cadrage.md` (section `Critères de validation`). C'est le seul endroit où vit ce que
+   `CLAUDE.md` ne résume pas, et c'est ce qui évite que deux agents parallèles inventent deux
+   versions divergentes du même contrat. Aux tickets suivants, le projet ayant un code source,
+   ces fichiers redeviennent une lecture à la demande.
+3. L'étape 2 s'applique ensuite, avec quatre différences :
    - le `contexte_researcher` filtré par `fichiers_cibles` n'a pas lieu d'être — transmets les
      seules contraintes propres à la sous-tâche ;
-   - **ne recopie jamais dans un payload le contenu de `CLAUDE.md` ni d'un fichier de
-     `docs/`** : `CLAUDE.md` est chargé automatiquement par chaque sous-agent, et les `docs/`
-     sont à sa portée s'il en a besoin — les redonner, c'est payer deux fois le même contexte ;
+   - **les contrats de `docs/architecture.md` traversent le découpage** : une sous-tâche qui
+     produit ou consomme un contrat le reçoit dans son payload, recopié tel quel, jamais
+     reformulé. Le fichier de plan porte, pour chaque sous-tâche, le **critère de validation**
+     de l'item de périmètre qu'elle sert — c'est lui qui dit quand elle est finie ;
+   - **hors ces contrats et ce critère, ne recopie rien de `CLAUDE.md` ni de `docs/`** :
+     `CLAUDE.md` est chargé automatiquement par chaque sous-agent, et les `docs/` sont à sa
+     portée s'il en a besoin — les redonner en bloc, c'est payer deux fois le même contexte ;
    - la **vague 1 contient une unique sous-tâche d'amorçage** (manifeste, dépendances,
      arborescence conforme à celle du cadrage, point d'entrée, `README.md` via la skill
      `generate-readme`) dont toutes les autres dépendent — jamais deux agents en parallèle sur

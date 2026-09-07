@@ -29,6 +29,26 @@ plugins](https://code.claude.com/docs/en/plugins-reference#plugin-directory-stru
 Toute nouvelle skill rejoint une catégorie existante ou en ouvre une nouvelle explicitement
 déclarée dans `plugin.json` — jamais posée à plat directement sous `skills/`.
 
+## Gabarits du cadrage
+
+`templates/` porte la forme des quatre fichiers écrits par `/new-project` dans le projet cible :
+`cadrage.md`, `architecture.md`, `decisions.md`, `CLAUDE.template.md`. Ce sont des **squelettes
+nus** — titres, ordre des sections, forme des tableaux, marqueurs `<…>` — sans consigne de
+remplissage : les consignes vivent dans `commands/new-project.md`, à un seul endroit.
+
+Deux raisons à ces fichiers plutôt qu'un exemple recopié dans la commande. D'abord la
+**structure identique d'un projet à l'autre** : un agent qui ouvre n'importe quel
+`docs/architecture.md` sait où trouver les contrats sans lire le fichier en entier. Ensuite le
+**coût de contexte** : la forme n'occupe la fenêtre que du fichier qu'on écrit, au lieu d'être
+rechargée avec la commande à chaque invocation.
+
+`CLAUDE.template.md` ne s'appelle pas `CLAUDE.md` **exprès** : un fichier de ce nom dans
+l'arborescence du plugin serait chargé comme mémoire de répertoire dès qu'on travaille dedans.
+
+Un gabarit se remplit, il ne s'étend pas : les sections déclarées optionnelles se suppriment
+quand elles sont vides, aucune section n'est ajoutée. Changer la forme, c'est changer le
+gabarit — pas l'improviser dans un projet.
+
 ## Deux commandes, une couture
 
 - `/new-project` — cadrage d'un projet neuf : conversation avec l'utilisateur pour qualifier le
@@ -50,8 +70,13 @@ dépend de la réponse précédente. Elle ne peut vivre que dans la boucle princ
 ## Deux niveaux de documentation du projet cible
 
 - `docs/` (racine du projet cible, versionné) — le détail : `cadrage.md` (besoin, utilisateurs,
-  périmètre), `architecture.md` (stack, arborescence, conventions), `decisions.md` (journal
-  append-only des arbitrages). Lu à la demande.
+  périmètre, **critères de validation**), `architecture.md` (stack, modules, **contrats**,
+  arborescence au fichier près, conventions), `decisions.md` (journal append-only des
+  arbitrages). Lu à la demande — **sauf au premier `/ticket`** sur un projet cadré et non
+  amorcé, où `architecture.md` et les critères de validation sont la matière même du découpage.
+  `architecture.md` est un plan d'implémentation, pas un survol : tout ce qui traverse une
+  frontière de module (types partagés, endpoints, événements, format de fichier) y est écrit en
+  dur, sans quoi deux agents lancés en parallèle inventent deux versions du même échange.
 - `CLAUDE.md` (racine du projet cible) — le résumé impératif, budget ~40 lignes. Il est
   rechargé dans le contexte de chaque agent à chaque tour : une ligne inutile s'y paie des
   centaines de fois sur la vie du projet. Le détail va dans `docs/`, le résumé dans
@@ -73,11 +98,22 @@ CLAUDE.md qui reste indicative) qui bloquent, avec `exit 2` :
 - **Tout commit/push git** — `Bash(git commit *)` et `Bash(git push *)` : par défaut, ce plugin
   ne committe ni ne pousse jamais à la place de l'utilisateur, y compris en flux `--auto`.
   Seul garde-fou **désactivable** (cf. section suivante).
-- **Toute lecture de fichier d'environnement privé** — outil `Read` sur `.env*` (motif
-  gitignore, matche à toute profondeur), plus les idiomes Bash les plus courants
-  (`cat`/`head`/`tail .env*`) et le dump complet des variables (`env`/`printenv` sans argument).
-  **Non désactivable** : une fuite de secret est irréversible et ne se rattrape pas par un
-  `git revert`, contrairement à un commit de trop.
+- **Toute lecture de fichier d'environnement privé** — outil `Read` sur un `.env*`, les idiomes
+  Bash de lecture (`cat`/`head`/`tail`/`less`/`more`/`od`/`xxd`… sur un `.env*`) et le dump
+  complet des variables (`env`/`printenv` sans argument, y compris en substitution ou dans un
+  corps de boucle). **Non désactivable** : une fuite de secret est irréversible et ne se
+  rattrape pas par un `git revert`, contrairement à un commit de trop.
+
+**Les deux hooks d'environnement n'ont pas de filtre `if`** : ils analysent eux-mêmes la
+commande ou le chemin du payload `PreToolUse`. C'est délibéré. Une règle de correspondance ne
+sait pas faire ce travail : `Bash(cat .env*)` est un préfixe littéral qui rate
+`cat config/.env.local`, et une règle **exacte sans joker** comme `Bash(env)` se déclenche sur
+des commandes qui ne contiennent aucun `env` — toute boucle `for … in … ; do … done` était
+refusée. Un garde-fou qui refuse au hasard finit désactivé ; celui-ci décide sur la commande
+réelle. Les scripts découpent la ligne sur `;`, `&&`, `||`, `|`, `&` et les ouvertures de
+sous-shell, retirent les mots qui précèdent une commande sans en changer la nature (`do`,
+`then`, `sudo`, `time`…), puis testent le nom réel et le *basename* de chaque argument — d'où
+`env FOO=bar cmd` autorisé (il ne dumpe rien) et `cat config/.env.local` refusé.
 
 ### Configuration des garde-fous
 
@@ -109,9 +145,12 @@ comme une absence, or `false` est justement la valeur qui désactive. La lib tes
 de la clé (`has($g)`). Le repli sans jq n'utilise pas non plus l'alternance `\(true\|false\)`,
 absente du sed BSD de macOS.
 
-**Limite connue** : les règles Bash sont des correspondances de préfixe littérales, pas des
-motifs de chemin — un accès détourné (`cat ./.env`, `python -c "open('.env').read()"`, un
-script qui lit le fichier lui-même) peut contourner ces hooks. Pour une garantie au niveau OS,
+**Limite connue** : l'analyse porte sur le texte de la commande, pas sur ce qu'elle fait
+réellement. Un accès indirect (`python -c "open('.env').read()"`, un script qui lit le fichier
+lui-même, une variable qui porte le chemin) passe encore. Sans `jq` sur la machine, la lecture
+du payload retombe sur une extraction `sed` approximative : une commande contenant des
+guillemets échappés peut échapper au garde-fou — installer `jq` est la façon la moins coûteuse
+de fermer ce trou. Pour une garantie au niveau OS,
 utiliser le [sandboxing](https://code.claude.com/docs/en/sandboxing) de Claude Code en plus de
 ces hooks, qui restent la première ligne de défense mais pas une garantie absolue.
 
@@ -129,6 +168,25 @@ de cible technique moins précise.
   une skill. La stack est fixée une fois par ticket — détectée par `skills/flow/detect-stack`
   sur un projet existant, arbitrée avec l'utilisateur par `/new-project` et lue dans le
   `CLAUDE.md` sur un projet neuf — puis propagée telle quelle, jamais redevinée.
+- **La stack n'est jamais tranchée seule** : dans `/new-project`, langage, framework front et
+  back, librairie d'interface, gestionnaire de paquets et mode de lancement font chacun l'objet
+  d'une question fermée. Le skill propose (options filtrées par ce qui est installé sur la
+  machine, recommandation en premier avec sa raison), l'utilisateur tranche. « L'utilisateur
+  n'ayant pas imposé de stack, j'arbitre » est la formule interdite : elle a produit un projet
+  entier bâti sur un choix que personne n'avait validé.
+- **Un cadrage se ferme, il ne se plafonne pas** : `/new-project` boucle sur une liste de sept
+  lignes (usage, périmètre, données, stack, critères de validation, distribution, points
+  d'architecture structurants) jusqu'à ce que chacune soit déclarée ou vérifiée. Un plafond de
+  tours de questions ne fait pas gagner du temps, il déplace le coût sur `/ticket`, qui devine.
+- **Chaque item du périmètre v1 porte un critère de validation observable** — un geste, un
+  résultat constatable. Le skill les rédige à partir de l'usage décrit puis les fait valider en
+  bloc, ce qui les rend *déclarés* au sens de la règle de sourçage. Sans eux, aucune sous-tâche
+  de `/ticket` ne sait à quoi ressemble « fini ».
+- **Zéro hypothèse structurante** : une hypothèse dont dépend un choix d'implémentation (seuil,
+  transport, format d'échange, cible externe, comportement d'erreur) est vérifiée ou posée en
+  question. Ne restent marquées `> Hypothèse` que les faits externes non vérifiables, et chacune
+  porte sa **conduite à tenir** — sans quoi elle reste un trou que le premier agent bouchera
+  seul.
 - **Contrats petits et filtrés** : un sous-agent ne reçoit jamais un digest complet quand un
   sous-ensemble filtré suffit. Le filtrage doit rester **mécanique** — `researcher` rattache
   chaque note aux fichiers qu'elle concerne, `/ticket` intersecte avec les `fichiers_cibles` et
