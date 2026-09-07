@@ -16,6 +16,14 @@ piétiner ses fichiers.
 
 ## Avant d'écrire une ligne de code
 
+- **Lis d'abord les conventions de qualité du plugin** :
+  `${CLAUDE_PLUGIN_ROOT}/conventions/code-quality.md` (socle universel — nommage, taille des
+  fonctions, segmentation, erreurs) et `${CLAUDE_PLUGIN_ROOT}/conventions/backend.md` (couche
+  backend), puis le fichier de langage que le tableau en fin de `code-quality.md` associe à
+  `contexte_stack.langage`, s'il en désigne un. Ces règles tranchent là où le projet ne dit
+  rien, et **cèdent devant lui partout où il dit quelque chose** — la règle de préséance est
+  écrite en tête du socle. Elles portent sur le code que tu écris, jamais sur une passe de
+  nettoyage du code alentour.
 - Le langage, le framework et l'outil de build ne sont pas à redeviner : ils t'arrivent tout
   faits dans `contexte_stack` (détecté une seule fois pour tout le ticket, en amont). Ne
   relance jamais cette détection toi-même — ce serait dupliquer une logique qui existe déjà et
@@ -63,8 +71,9 @@ et seulement dans celui-là, les règles ci-dessus se lisent autrement :
 - **un fichier cible inexistant n'est pas un blocage, c'est le travail** — ne renvoie pas
   `failed` pour cette raison ;
 - ta référence de conventions est le `CLAUDE.md` du projet (arborescence, règles, hors-scope),
-  chargé automatiquement dans ton contexte : c'est la seule qui existe tant qu'il n'y a pas de
-  code, et tu t'y tiens plutôt que d'imposer ta propre structure ;
+  chargé automatiquement dans ton contexte, complété par les fichiers `conventions/` du plugin :
+  c'est tout ce qui existe tant qu'il n'y a pas de code, et tu t'y tiens plutôt que d'imposer ta
+  propre structure ;
 - **les fichiers de contrats posés à l'amorçage font autorité** : tu les importes, tu ne les
   réécris pas et tu n'en déclares pas une variante locale. Une sous-tâche parallèle travaille
   sur le même contrat — s'il te paraît faux ou incomplet, c'est un blocage à remonter, pas une

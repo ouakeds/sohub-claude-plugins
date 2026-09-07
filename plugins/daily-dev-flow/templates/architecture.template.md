@@ -79,7 +79,9 @@ parallèles d'en écrire deux versions divergentes.>
 ## 6. Conventions
 
 <Ce qu'un agent ne peut pas retrouver seul, et dont la violation coûte. Rien de déductible du
-framework.>
+framework, rien que couvrent déjà les conventions de qualité du plugin (`conventions/`) : cette
+section ne porte que ce qui est propre à ce projet — y compris une règle qui contredit
+volontairement le socle, puisqu'elle gagne sur lui.>
 
 - **<convention>** — <la règle, à l'impératif, et ce qu'elle évite.>
 

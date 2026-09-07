@@ -7,6 +7,23 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Les agents de développement écrivent contre une convention de qualité, plus seulement contre
+  le style du voisinage.** Nouveau dossier `conventions/` : `code-quality.md` (socle universel —
+  nommage qui révèle l'intention, fonctions à un seul niveau d'abstraction et complexité
+  cognitive ≤ 15, segmentation et sens des dépendances, état, erreurs, commentaires),
+  `backend.md` et `frontend.md` (une couche chacune), et `lang/typescript.md`, `lang/java.md`,
+  `lang/kotlin.md`. `backend-dev` et `frontend-dev` les lisent en tête de sous-tâche via
+  `${CLAUDE_PLUGIN_ROOT}`, le fichier de langage étant choisi d'après `contexte_stack.langage`.
+  Jusqu'ici, sur un projet neuf où il n'y a par définition aucun voisinage à imiter, « écris du
+  code qu'un relecteur senior validerait » était la seule consigne de qualité disponible.
+- Le dispositif est explicitement **subordonné au projet** : la préséance déclarée en tête du
+  socle et rappelée dans les deux fiches d'agent est *code réel du voisinage > `docs/` et
+  `CLAUDE.md` du projet cible > fichier de langage > socle*, et la convention porte sur le code
+  qu'on écrit, jamais sur une passe de nettoyage du code alentour — un renommage opportuniste
+  hors `fichiers_cibles` mettrait deux sous-tâches parallèles sur les mêmes fichiers. Un langage
+  sans fichier `lang/` n'est pas un blocage. La section `## 6. Conventions` de
+  `architecture.template.md` ne porte plus que ce qui est propre au projet, y compris ce qui
+  contredit volontairement le socle.
 - **Le backlog est généré au cadrage, et le fichier de plan devient le ticket.** Nouvelle skill
   `skills/flow/generate-backlog` : elle projette `docs/cadrage.md` et `docs/architecture.md` en
   **lots de travail** — un fichier numéroté par lot dans `.sohub-claude-plugin/plans/`, à l'état
