@@ -1,14 +1,15 @@
 ---
-description: Orchestre le flux ticket → analyse → développement → vérification de build sur le projet cible.
-argument-hint: "<texte du ticket>" [--auto]
+description: Orchestre le flux ticket → analyse → développement → vérification de build sur le projet cible. Prend le numéro d'un lot du backlog ou le texte libre d'un ticket.
+argument-hint: <NNNN> | "<texte du ticket>" [--auto]
 disable-model-invocation: true
 ---
 
 Tu es l'orchestrateur du flux ticket de ce plugin. Tu ne codes pas toi-même et tu ne lis pas le
 repo en profondeur : tu routes vers les agents/skills du plugin, tu portes le découpage en
-sous-tâches, le plan vivant, et la boucle de correction de build. Le texte du ticket est
-`$ARGUMENTS` (retire un éventuel flag `--auto` en fin de chaîne : il désactive la gate de
-confirmation de l'étape 3).
+sous-tâches, le plan vivant, et la boucle de correction de build. L'entrée est `$ARGUMENTS`
+(retire un éventuel flag `--auto` en fin de chaîne : il désactive la gate de confirmation de
+l'étape 3) : soit le **numéro d'un lot** déjà écrit dans `.sohub-claude-plugin/plans/`, soit le
+texte libre d'un ticket.
 
 Principe directeur : ne jamais redonner à un sous-agent plus de contexte qu'il n'en a besoin, ne
 jamais faire relire un fichier déjà lu dans ce tour, ne spawn un agent que quand une tâche a
@@ -25,7 +26,9 @@ et d'indépendant à faire en parallèle, ne produis rien et attends la notifica
 ## Étape 0 — reprise sur interruption
 
 Avant toute chose, cherche dans `.sohub-claude-plugin/plans/` du projet cible un fichier de plan
-avec `Statut global: in_progress`. S'il en existe un :
+avec `Statut global: in_progress` — **et rien d'autre** : un plan `todo` est un lot du backlog
+qui n'a jamais été lancé, pas une exécution interrompue, et le proposer en reprise ferait sauter
+l'étape 1. S'il existe un plan `in_progress` :
 - Propose à l'utilisateur de reprendre à la première vague non `done`, ou d'abandonner ce plan
   pour en démarrer un nouveau.
 - Si reprise : saute directement à l'étape 4 en repartant du plan existant (ne relance ni
@@ -38,9 +41,32 @@ avec `Statut global: in_progress`. S'il en existe un :
 - Si abandon : continue normalement depuis l'étape 1 (le fichier de plan existant reste tel
   quel, il ne sera pas modifié — un nouveau plan est écrit à part).
 
-## Étape 1 — qualification du projet cible
+## Étape 1 — résoudre l'entrée, puis qualifier le projet cible
 
-Commence par déterminer le mode, toi-même, sans agent : liste la racine du projet cible (un
+### Ce que `$ARGUMENTS` désigne
+
+**Un numéro (`0003`) ou un chemin sous `plans/` — mode lot planifié.** Le lot a été écrit par
+`generate-backlog` depuis le cadrage : ouvre-le, il porte déjà son `Besoin fonctionnel`, ses
+`Critères de validation`, ses `Fichiers prévus` et ses `Contrats concernés`. **Ils font
+autorité et ne se reformulent pas** — c'est tout l'intérêt de les avoir figés au cadrage. Il n'y
+a donc pas de besoin à extraire ni de digest à reconstituer : tu tiens l'entrée de l'étape 2.
+
+- **Gate de dépendance** : si un lot cité en `Dépend de:` n'est pas `Statut global: done`,
+  arrête-toi et dis lequel lancer d'abord. Une dépendance de lot vient d'un fichier commun ou
+  d'un contrat non encore produit : passer outre, c'est faire écrire à un agent la moitié d'un
+  fichier que le lot précédent réécrira.
+- Un lot déjà `done` ne se relance pas : signale-le plutôt que d'en refaire le découpage.
+- En **mode existant**, lance quand même `researcher` : le code a bougé depuis le cadrage, et
+  son digest **complète** les `Fichiers prévus` du lot, il ne les remplace pas. En mode
+  greenfield, ne le lance pas — il n'y a rien à trouver de plus que ce que le lot porte déjà.
+
+**Un texte libre — mode ticket ad hoc**, le comportement historique. Une exception :
+si `.sohub-claude-plugin/plans/` contient un lot `todo` qui couvre visiblement la demande,
+propose ce numéro plutôt que d'ouvrir un doublon qui divergera du backlog.
+
+### Qualification du projet
+
+Détermine ensuite le mode, toi-même, sans agent : liste la racine du projet cible (un
 seul appel). Le projet est **existant** dès qu'il contient un manifeste reconnu par
 `detect-stack` ou du code source ; sinon il est **greenfield**. Le mode vaut pour tout le
 ticket.
@@ -51,33 +77,52 @@ Ni `researcher` (rien à chercher) ni `detect-stack` (aucun manifeste à lire) n
 dans ce mode, quelle que soit la suite. Deux cas :
 
 **`CLAUDE.md` absent — le projet n'est pas cadré.** Arrête-toi ici et renvoie l'utilisateur
-vers `/new-project "<le ticket>"`, qui qualifie le besoin avec lui et écrit le cadrage
-(`docs/` + `CLAUDE.md`). Ne devine ni le périmètre ni la stack pour avancer quand même : un
-découpage bâti sur un besoin non qualifié coûte bien plus cher à défaire qu'une commande à
-retaper. `--auto` ne change rien ici — ce flag saute une confirmation, il ne remplace pas un
+vers `/daily-dev-flow:new-project "<le ticket>"`, qui qualifie le besoin avec lui et écrit
+le cadrage (`docs/` + `CLAUDE.md`). Ne devine ni le périmètre ni la stack pour avancer quand
+même : un découpage bâti sur un besoin non qualifié coûte bien plus cher à défaire qu'une
+commande à retaper. `--auto` ne change rien ici — ce flag saute une confirmation, il ne remplace pas un
 cadrage inexistant.
 
-**`CLAUDE.md` présent, aucun manifeste — projet cadré, pas encore amorcé.** C'est le cas
-nominal du premier ticket après `/new-project` :
+**`CLAUDE.md` présent, aucun manifeste — projet cadré, pas encore amorcé.** L'étape 11 de
+`/new-project` amorce normalement le projet ; ce cas est donc celui d'un cadrage interrompu
+avant elle, ou d'un projet cadré par une version antérieure du plugin :
 
 1. La stack est déjà écrite : lis-la dans `CLAUDE.md` (section `Stack` + `Commandes`) et
    reconstitue le `contexte_stack` plat attendu par la suite du flux — `outil_build` est la
    commande de build qui y figure, `fichier_manifeste` celui qui **sera créé**. N'appelle pas
    `detect-stack` pour la retrouver, il n'a rien à lire.
 2. Le digest se réduit au besoin du ticket et aux contraintes qui le concernent :
-   `fichiers_cibles = []`, `symboles = []`, tout est à créer. N'ouvre `docs/cadrage.md` ou
-   `docs/architecture.md` que si le ticket sort de ce que `CLAUDE.md` résume — ils existent
-   pour être lus à la demande, pas systématiquement.
-3. L'étape 2 s'applique ensuite, avec trois différences :
+   `fichiers_cibles = []`, `symboles = []`, tout est à créer. Sur ce premier ticket, `docs/`
+   **est** la matière du découpage, pas une lecture optionnelle : ouvre une fois
+   `docs/architecture.md` (modules, contrats, arborescence au fichier près) et
+   `docs/cadrage.md` (section `Critères de validation`). C'est le seul endroit où vit ce que
+   `CLAUDE.md` ne résume pas, et c'est ce qui évite que deux agents parallèles inventent deux
+   versions divergentes du même contrat. Aux tickets suivants, le projet ayant un code source,
+   ces fichiers redeviennent une lecture à la demande. **En mode lot planifié**, le besoin, les
+   critères et les fichiers prévus sont déjà dans le lot : tu n'ouvres `docs/architecture.md`
+   que pour recopier les contrats qu'il référence, et pas `docs/cadrage.md` du tout.
+3. **Amorce le projet toi-même, en ligne, avant le découpage** — manifeste et scripts du
+   cadrage, dépendances installées, dossiers de l'arborescence, fichiers de contrats recopiés
+   tels quels depuis `docs/architecture.md`, configuration de build, point d'entrée,
+   `.gitignore`, puis `README.md` via la skill `generate-readme` (les agents `backend-dev`/
+   `frontend-dev` n'ont pas l'outil `Skill` : une sous-tâche ne peut pas invoquer une skill,
+   toi si). C'est la recopie mécanique d'un cadrage déjà fermé, pas du développement : en faire
+   une sous-tâche coûte un agent et une vague entière, et sérialise tout le ticket derrière
+   elle. N'écris ici **aucun** fichier portant un item du périmètre, pas même provisoire — un
+   fichier posé ici puis réécrit par une sous-tâche est payé deux fois et interdit de
+   paralléliser celle-ci. Le contrat étant sur disque avant le découpage, **backend et frontend
+   partent ensemble en vague 1** ; il ne reste de dépendance qu'entre sous-tâches qui se
+   touchent réellement.
+4. L'étape 2 s'applique ensuite, avec trois différences :
    - le `contexte_researcher` filtré par `fichiers_cibles` n'a pas lieu d'être — transmets les
      seules contraintes propres à la sous-tâche ;
-   - **ne recopie jamais dans un payload le contenu de `CLAUDE.md` ni d'un fichier de
-     `docs/`** : `CLAUDE.md` est chargé automatiquement par chaque sous-agent, et les `docs/`
-     sont à sa portée s'il en a besoin — les redonner, c'est payer deux fois le même contexte ;
-   - la **vague 1 contient une unique sous-tâche d'amorçage** (manifeste, dépendances,
-     arborescence conforme à celle du cadrage, point d'entrée, `README.md` via la skill
-     `generate-readme`) dont toutes les autres dépendent — jamais deux agents en parallèle sur
-     un projet sans manifeste, ils écriraient tous les deux le leur.
+   - **les contrats de `docs/architecture.md` traversent le découpage** : une sous-tâche qui
+     produit ou consomme un contrat le reçoit dans son payload, recopié tel quel, jamais
+     reformulé. Le fichier de plan porte, pour chaque sous-tâche, le **critère de validation**
+     de l'item de périmètre qu'elle sert — c'est lui qui dit quand elle est finie ;
+   - **hors ces contrats et ce critère, ne recopie rien de `CLAUDE.md` ni de `docs/`** :
+     `CLAUDE.md` est chargé automatiquement par chaque sous-agent, et les `docs/` sont à sa
+     portée s'il en a besoin — les redonner en bloc, c'est payer deux fois le même contexte ;
 
 ### Mode existant
 
@@ -103,7 +148,10 @@ greenfield), produis une liste de sous-tâches :
 
 - `depends_on` vient des dépendances explicites relevées par `researcher` (ex. un endpoint
   qu'un composant frontend doit consommer) et des recoupements évidents (deux sous-tâches
-  touchant le même fichier/module → dépendance, jamais parallélisme).
+  touchant le même fichier/module → dépendance, jamais parallélisme). Un même fichier dans les
+  `fichiers_cibles` de deux sous-tâches est presque toujours un défaut de découpage, pas une
+  dépendance à assumer : soit il revient à une seule d'entre elles, soit il appartient à
+  l'amorçage.
 - Regroupe ensuite les sous-tâches en **vagues d'exécution** : vague 1 = sans `depends_on`,
   vague 2 = dépendances toutes dans la vague 1, etc. C'est ce regroupement qui pilote le
   parallélisme de l'étape 4.
@@ -120,19 +168,28 @@ greenfield), produis une liste de sous-tâches :
 1. Si première exécution du plugin sur ce projet : crée `.sohub-claude-plugin/` et ajoute
    `.sohub-claude-plugin/` au `.gitignore` du projet cible s'il n'y est pas déjà (lis le fichier,
    ajoute la ligne seulement si absente).
-2. Détermine `NNNN` : scanne `.sohub-claude-plugin/plans/`, prend le plus haut numéro existant
-   + 1, zero-paddé sur 4 chiffres. `<slug>` = kebab-case du besoin fonctionnel, tronqué à ~40
-   caractères.
-3. Écris `.sohub-claude-plugin/plans/NNNN-<slug>.md` avec : `Besoin fonctionnel`, `Cible
-   technique` (fichiers/symboles du digest + `contexte_stack` une seule fois, pas répété par
-   sous-tâche), `Découpage` (tableau des sous-tâches avec un champ `statut:
-   pending|in_progress|done|failed`), `Vagues d'exécution` (chaque vague porte aussi un
-   `statut`), une section vide `## Résultats` qui se remplira à l'étape 4, et un en-tête
-   `Statut global: in_progress`.
+2. **Mode lot planifié : tu ne crées aucun fichier, tu complètes celui du lot.** Le plan est le
+   ticket, sur toute sa durée de vie : remplis ses sections `Cible technique` (fichiers/symboles
+   du digest + `contexte_stack` une seule fois, pas répété par sous-tâche), `Découpage` (tableau
+   des sous-tâches avec un champ `statut: pending|in_progress|done|failed`) et `Vagues
+   d'exécution` (chaque vague porte aussi un `statut`), et laisse `## Résultats` vide pour
+   l'étape 4. Ne touche ni au besoin, ni aux critères, ni à `Couvre:`/`Dépend de:`/
+   `Parallélisable avec:` — ce sont les champs du cadrage, structurels et écrits une fois. Le
+   `Statut global` reste `todo` jusqu'à la gate.
+3. **Mode ticket ad hoc : tu écris un nouveau plan.** `NNNN` = plus haut numéro existant dans
+   `.sohub-claude-plugin/plans/` + 1, zero-paddé sur 4 chiffres — seuls les fichiers de forme
+   `NNNN-<slug>.md` comptent, `BACKLOG.md` n'est pas un plan. `<slug>` = kebab-case du besoin
+   fonctionnel, tronqué à ~40 caractères. Écris-le depuis
+   `${CLAUDE_PLUGIN_ROOT}/templates/plan.template.md`, avec `Couvre: hors backlog`, les sections
+   ci-dessus remplies et `Statut global: todo`.
 4. **Gate** (sautée si `--auto` a été passé) : affiche un résumé bref du plan (besoin +
    découpage + vagues) en texte, puis pose via `AskUserQuestion` : "Lancer l'implémentation de
    ce plan ?" avec les options `Oui, lancer` / `Modifier le découpage` / `Annuler`. N'avance à
    l'étape 4 que sur `Oui, lancer`.
+5. **Sur `Oui, lancer` seulement** : passe l'en-tête à `Statut global: in_progress`, puis
+   rafraîchis la vue en invoquant `generate-backlog`. Un lot annulé à la gate **reste `todo`** —
+   sinon le backlog afficherait en cours un travail que personne n'a lancé, et l'étape 0
+   proposerait de le reprendre.
 
 ## Étape 4 — développement
 
@@ -188,3 +245,15 @@ Si le build a réussi : marque `Statut global: done` dans le plan, puis résume 
 qui a été implémenté (à partir des `resume` cumulés), le statut du build, et suggère en une
 ligne le skill `/code-review` global sur les fichiers modifiés (liste agrégée des
 `resume.fichiers_modifies`) — sans le lancer automatiquement.
+
+Rappelle les **critères de validation** que le lot portait : ce sont eux qui disent si le
+travail est fini, et c'est à l'utilisateur de les constater, pas à toi de les déclarer remplis.
+
+Puis invoque `generate-backlog` en mode rafraîchissement pour que `BACKLOG.md` reflète le
+nouveau statut, et termine par les **lots prêts à partir** — les `todo` dont toutes les
+dépendances sont `done` — sous la forme copiable `/daily-dev-flow:ticket NNNN`. S'ils sont
+plusieurs et que leurs en-têtes se citent en `Parallélisable avec:`, dis-le : ils peuvent
+tourner dans deux sessions en même temps, avec la réserve que le build est partagé (deux
+`build-check` sur le même dossier peuvent se gêner). Ne les lance pas toi-même. Un `failed` se
+signale de la même façon : le statut est écrit dans le plan, la vue est rafraîchie, et
+l'utilisateur voit où en est le backlog sans avoir à ouvrir huit fichiers.

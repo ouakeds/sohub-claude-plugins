@@ -1,5 +1,5 @@
 {
-  "description": "Garde-fous daily-dev-flow : interdiction de commit/push git (actif par defaut, desactivable par garde-fou via .sohub-claude-plugin.json), interdiction de lecture des variables d'environnement privees du projet cible (non desactivable).",
+  "description": "Garde-fous daily-dev-flow : interdiction de commit/push git (actif par defaut, desactivable par garde-fou via .sohub-claude-plugin.json), interdiction de lecture des variables d'environnement privees du projet cible (non desactivable). Les garde-fous d'environnement n'ont pas de filtre `if` : ils analysent eux-memes la commande ou le chemin soumis, une regle de correspondance ne sachant ni attraper `cat config/.env.local` ni s'abstenir sur une boucle `for`.",
   "hooks": {
     "PreToolUse": [
       {
@@ -17,32 +17,10 @@
           },
           {
             "type": "command",
-            "if": "Bash(cat .env*)",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-read.sh"
           },
           {
             "type": "command",
-            "if": "Bash(cat ./.env*)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-read.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(head .env*)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-read.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(tail .env*)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-read.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(env)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-dump.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(printenv)",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-dump.sh"
           }
         ]
@@ -52,7 +30,6 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Read(.env*)",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-read.sh"
           }
         ]

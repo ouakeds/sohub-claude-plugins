@@ -17,7 +17,7 @@ Plugin Claude Code autonome (roster d'agents propre, générique multi-stack) qu
 - **Persistance des plans/rapports** : tout artefact généré (plan de ticket, audit sécurité, doc OpenAPI)
   est écrit dans un dossier unique `.sohub-claude-plugin/` à la racine du **projet cible**, sous un
   sous-dossier par nature d'analyse (`plans/`, `audit/`, `documentations/`), avec un numéro de version
-  auto-incrémenté **par sous-dossier** (jamais réutilisé, jamais écrasé). `.sohub-claude-plugin/` est
+  auto-incrémenté **par sous-dossier**  (jamais réutilisé, jamais écrasé). `.sohub-claude-plugin/` est
   entièrement gitignoré — ajouté automatiquement au `.gitignore` du projet cible à la première exécution
   d'un skill/de la commande si l'entrée n'y est pas déjà (lecture du fichier, ajout d'une ligne si absente).
 

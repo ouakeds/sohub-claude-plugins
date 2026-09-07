@@ -1,7 +1,7 @@
 #!/bin/bash
-# Resolution de l'etat d'un garde-fou daily-dev-flow.
+# Resolution de l'etat d'un garde-fou daily-dev-flow, et lecture du payload PreToolUse.
 #
-# Ordre de priorite, premier trouve gagne :
+# Ordre de priorite d'un garde-fou, premier trouve gagne :
 #   1. Variable DAILY_DEV_FLOW_GUARD_<NOM> exportee dans la session (on/off, 1/0, true/false)
 #   2. Config du projet cible : .sohub-claude-plugin.json, cherche depuis le cwd de la
 #      session puis en remontant jusqu'a la racine du systeme de fichiers
@@ -9,32 +9,79 @@
 #   4. Defaut : garde-fou actif (securise par defaut)
 #
 # Format du fichier de config :
-#   { "guards": { "git": false, "env": true } }
+#   { "guards": { "git": false } }
 
 DDF_CONFIG_NAME=".sohub-claude-plugin.json"
 DDF_USER_CONFIG="${HOME}/.claude/sohub-claude-plugin.json"
 
-# Repere le repertoire de travail de la session. Le payload du hook PreToolUse arrive sur
-# stdin et porte le champ `cwd` ; a defaut, on retombe sur le repertoire courant du process.
-_ddf_session_cwd() {
-  local payload="" cwd=""
-  if [ ! -t 0 ]; then
-    payload=$(cat 2>/dev/null)
-  fi
-  if [ -n "$payload" ]; then
-    if command -v jq >/dev/null 2>&1; then
-      cwd=$(printf '%s' "$payload" | jq -r 'if type == "object" then (.cwd // empty) else empty end' 2>/dev/null)
-    else
-      # Sans jq, extraction textuelle du champ : suffisant pour un chemin, qui ne contient
-      # ni guillemet ni echappement JSON dans les cas reels.
-      cwd=$(printf '%s' "$payload" | sed -n 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+# --- Payload du hook -------------------------------------------------------------------
+#
+# Le payload PreToolUse arrive sur stdin et ne peut etre lu qu'une seule fois : tout script
+# qui a besoin a la fois du `cwd` et de `tool_input` doit passer par ce cache.
+
+DDF_PAYLOAD=""
+DDF_PAYLOAD_READ=0
+
+ddf_payload() {
+  if [ "$DDF_PAYLOAD_READ" -eq 0 ]; then
+    DDF_PAYLOAD_READ=1
+    if [ ! -t 0 ]; then
+      DDF_PAYLOAD=$(cat 2>/dev/null)
     fi
   fi
+  printf '%s' "$DDF_PAYLOAD"
+}
+
+# Amorcage du cache des le sourcage, dans le shell principal. Sans lui, le premier acces
+# au payload se ferait depuis une substitution de commande — donc dans un sous-shell, qui
+# viderait stdin sans rien remonter au parent : le deuxieme champ lu serait toujours vide.
+ddf_payload >/dev/null 2>&1
+
+# _ddf_payload_field <chemin jq> <cle pour le repli sed>
+# Renvoie 1 si le champ est absent ou illisible.
+_ddf_payload_field() {
+  local payload value
+  payload=$(ddf_payload)
+  [ -n "$payload" ] || return 1
+  if command -v jq >/dev/null 2>&1; then
+    value=$(printf '%s' "$payload" | jq -r "$1 // empty" 2>/dev/null)
+  else
+    # Repli sans jq : extraction textuelle. Suffisante pour un chemin, approximative pour
+    # une commande contenant des guillemets echappes (cf. « Limite connue » du CLAUDE.md).
+    value=$(printf '%s' "$payload" | sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" | head -1)
+  fi
+  [ -n "$value" ] || return 1
+  printf '%s' "$value"
+}
+
+# La commande Bash reellement soumise a l'outil.
+ddf_tool_command() { _ddf_payload_field '.tool_input.command' 'command'; }
+
+# Le chemin soumis a l'outil Read.
+ddf_tool_file_path() { _ddf_payload_field '.tool_input.file_path' 'file_path'; }
+
+# Decoupe une ligne de commande en sous-commandes, une par ligne. Les separateurs couvrent
+# l'enchainement (`;` `&&` `||` `&`), le pipe, et les ouvertures de sous-shell / substitution
+# (`(` `)` backquote `{` `}`) — sans quoi `echo $(env)` passerait entre les mailles.
+ddf_command_segments() {
+  printf '%s' "$1" \
+    | tr '|;&(){}`\n' '\n\n\n\n\n\n\n\n' \
+    | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+    | grep -v '^$'
+}
+
+# Repere le repertoire de travail de la session : champ `cwd` du payload, a defaut le
+# repertoire courant du process.
+_ddf_session_cwd() {
+  local cwd=""
+  cwd=$(_ddf_payload_field '.cwd' 'cwd') || cwd=""
   if [ -z "$cwd" ]; then
     cwd="${CLAUDE_PROJECT_DIR:-$PWD}"
   fi
   printf '%s' "$cwd"
 }
+
+# --- Garde-fous ------------------------------------------------------------------------
 
 # Lit .guards.<nom> dans un fichier de config. Renvoie 1 si le fichier ou la cle est absent,
 # pour distinguer « non configure » de « configure a false ».
@@ -73,7 +120,7 @@ guard_is_enabled() {
 
   upper=$(printf '%s' "$guard" | tr '[:lower:]-' '[:upper:]_')
   var_name="DAILY_DEV_FLOW_GUARD_${upper}"
-  value="${!var_name-}"
+  eval "value=\${${var_name}-}"
   if [ -n "$value" ]; then
     _ddf_is_falsy "$value" && return 1
     return 0
