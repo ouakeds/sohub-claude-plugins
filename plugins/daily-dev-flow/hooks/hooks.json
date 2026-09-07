@@ -1,0 +1,62 @@
+{
+  "description": "Garde-fous daily-dev-flow : interdiction de commit/push git, interdiction de lecture des variables d'environnement privees du projet cible.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit *)",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-git-commit.sh"
+          },
+          {
+            "type": "command",
+            "if": "Bash(git push *)",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-git-push.sh"
+          },
+          {
+            "type": "command",
+            "if": "Bash(cat .env*)",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-read.sh"
+          },
+          {
+            "type": "command",
+            "if": "Bash(cat ./.env*)",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-read.sh"
+          },
+          {
+            "type": "command",
+            "if": "Bash(head .env*)",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-read.sh"
+          },
+          {
+            "type": "command",
+            "if": "Bash(tail .env*)",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-read.sh"
+          },
+          {
+            "type": "command",
+            "if": "Bash(env)",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-dump.sh"
+          },
+          {
+            "type": "command",
+            "if": "Bash(printenv)",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-dump.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Read(.env*)",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-env-read.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

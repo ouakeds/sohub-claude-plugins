@@ -21,7 +21,7 @@ schémas de validation existants) plutôt que de redéfinir un format propre au 
 
 ## Persistance
 
-Même convention que `security-audit` (cf. `skills/security-audit/SKILL.md`) :
+Même convention que `security-audit` (cf. `skills/audit/security-audit/SKILL.md`) :
 
 1. Créer `.sohub-claude-plugin/` et l'entrée `.gitignore` correspondante si absentes (à la
    première exécution sur le projet cible).

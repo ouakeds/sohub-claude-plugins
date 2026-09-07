@@ -96,27 +96,36 @@ outillage ni bruit à contenir.
 
 ## Architecture cible
 
-```
-claude-dev-plugin/
-├── .claude-plugin/plugin.json      # manifeste (nom, version, description)
-├── agents/
-│   ├── researcher.md               # read-only, code-review-graph : besoin fonctionnel + cible technique
-│   ├── backend-dev.md
-│   ├── frontend-dev.md
-│   └── build-verifier.md           # optionnel — isole un log de build volumineux, résume les erreurs
-│                                    # (pas d'agent code-reviewer packagé : /ticket suggère le skill
-│                                    #  /code-review global existant en fin de flux, cf. agents-prep/code-reviewer.md)
-├── skills/
-│   ├── detect-stack/               # heuristique de détection de stack et d'outil de build
-│   ├── build-check/                # lance le build détecté, parse le résultat (utilisée par /ticket)
-│   ├── rgaa-check/                 # vérifie et corrige la conformité RGAA 4.1 sur les fichiers modifiés
-│   ├── security-audit/             # audit sécurité (diff courant ou repo complet), rapport versionné
-│   └── openapi-doc/                # génère/rafraîchit la doc OpenAPI, versionnée
-├── commands/
-│   └── ticket.md                   # /ticket "<texte>" — orchestrateur : découpe, routage, boucle build
-└── CLAUDE.md                       # conventions internes du plugin
+Le dépôt est un **marketplace multi-plugins** : la racine ne porte pas elle-même le plugin, elle
+liste les plugins disponibles (`plugins/<nom>/`) via `.claude-plugin/marketplace.json`, pour
+pouvoir en générer d'autres à terme sans réorganiser l'existant.
 
-# généré dans le projet cible, pas dans le plugin :
+```
+claude-dev-plugin/                          # dépôt = marketplace
+├── .claude-plugin/marketplace.json         # liste des plugins du dépôt (name, source, description)
+├── PLAN.md
+└── plugins/
+    └── daily-dev-flow/                           # le plugin décrit par ce document
+        ├── .claude-plugin/plugin.json      # manifeste (nom, version, description)
+        ├── .mcp.json                       # config MCP requise (code-review-graph : uvx code-review-graph serve)
+        ├── agents/
+        │   ├── researcher.md               # read-only, code-review-graph : besoin fonctionnel + cible technique
+        │   ├── backend-dev.md
+        │   ├── frontend-dev.md
+        │   └── build-verifier.md           # optionnel — isole un log de build volumineux, résume les erreurs
+        │                                   # (pas d'agent code-reviewer packagé : /ticket suggère le skill
+        │                                   #  /code-review global existant en fin de flux)
+        ├── skills/
+        │   ├── detect-stack/               # heuristique de détection de stack et d'outil de build
+        │   ├── build-check/                # lance le build détecté, parse le résultat (utilisée par /ticket)
+        │   ├── rgaa-check/                 # vérifie et corrige la conformité RGAA 4.1 sur les fichiers modifiés
+        │   ├── security-audit/             # audit sécurité (diff courant ou repo complet), rapport versionné
+        │   └── openapi-doc/                # génère/rafraîchit la doc OpenAPI, versionnée
+        ├── commands/
+        │   └── ticket.md                   # /ticket "<texte>" — orchestrateur : découpe, routage, boucle build
+        └── CLAUDE.md                       # conventions internes du plugin daily-dev-flow
+
+# généré dans le projet cible où /ticket est utilisé (pas dans ce dépôt) :
 <projet-cible>/
 ├── .sohub-claude-plugin/           # tout artefact généré par le plugin, gitignored automatiquement
 │   ├── plans/                      # plans technico-fonctionnels des tickets traités

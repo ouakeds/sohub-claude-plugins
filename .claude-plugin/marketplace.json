@@ -1,0 +1,13 @@
+{
+  "name": "sohub-claude-plugins",
+  "owner": {
+    "name": "Sabri"
+  },
+  "plugins": [
+    {
+      "name": "daily-dev-flow",
+      "source": "./plugins/daily-dev-flow",
+      "description": "Flux ticket → analyse → développement → vérification de build, générique multi-stack, orchestré par /ticket."
+    }
+  ]
+}

@@ -14,7 +14,7 @@ cf. `detect-stack`) et renvoie un résultat exploitable par `/ticket`.
 ## Entrée
 
 `contexte_stack` tel que produit par `detect-stack` — objet plat, ou objet indexé par
-sous-projet en cas de monorepo (cf. `skills/detect-stack/SKILL.md`).
+sous-projet en cas de monorepo (cf. `skills/flow/detect-stack/SKILL.md`).
 
 ## Exécution
 
