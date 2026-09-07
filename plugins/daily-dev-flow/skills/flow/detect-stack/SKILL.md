@@ -43,6 +43,10 @@ Objet plat :
 
 ## Heuristique
 
+0. **Aucun manifeste dans le repo** : il n'y a rien à détecter — ne devine pas une stack à
+   partir d'un dossier vide. C'est le cas greenfield, traité en amont par `/ticket`, qui déduit
+   `contexte_stack` du ticket lui-même et n'appelle pas cette skill. Si elle est appelée quand
+   même, renvoie `null` explicitement plutôt qu'une stack inventée.
 1. **Monorepo / manifestes multiples** : privilégier le manifeste le plus proche des
    `fichiers_cibles` identifiés par `researcher`, pas systématiquement celui à la racine.
 2. Priorité : manifeste explicite > extension de fichier > convention de nommage, en cas de

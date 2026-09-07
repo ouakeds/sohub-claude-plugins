@@ -12,7 +12,15 @@ confirmation de l'étape 3).
 
 Principe directeur : ne jamais redonner à un sous-agent plus de contexte qu'il n'en a besoin, ne
 jamais faire relire un fichier déjà lu dans ce tour, ne spawn un agent que quand une tâche a
-réellement besoin d'un contexte isolé — sinon fais le travail toi-même en ligne.
+réellement besoin d'un contexte isolé — sinon fais le travail toi-même en ligne. Et ne lance
+jamais une étape dont l'entrée est vide : une analyse sans rien à analyser coûte un agent et un
+tour pour un résultat nul.
+
+**Attente des agents** : un agent lancé est attendu directement, son résultat arrive de
+lui-même. N'exécute jamais de commande de remplissage pour patienter (`sleep`, `echo waiting`,
+`echo ok`, boucle de polling) et n'annonce pas l'attente en texte à chaque tour : chaque tour
+consommé à attendre est un aller-retour API facturé pour zéro travail. Si tu n'as rien d'utile
+et d'indépendant à faire en parallèle, ne produis rien et attends la notification.
 
 ## Étape 0 — reprise sur interruption
 
@@ -25,7 +33,48 @@ avec `Statut global: in_progress`. S'il en existe un :
 - Si abandon : continue normalement depuis l'étape 1 (le fichier de plan existant reste tel
   quel, il ne sera pas modifié — un nouveau plan est écrit à part).
 
-## Étape 1 — recherche de contexte + détection de stack
+## Étape 1 — qualification du projet cible
+
+Commence par déterminer le mode, toi-même, sans agent : liste la racine du projet cible (un
+seul appel). Le projet est **existant** dès qu'il contient un manifeste reconnu par
+`detect-stack` ou du code source ; sinon il est **greenfield**. Le mode vaut pour tout le
+ticket.
+
+### Mode greenfield — le cadrage n'est pas ton travail
+
+Ni `researcher` (rien à chercher) ni `detect-stack` (aucun manifeste à lire) ne sont lancés
+dans ce mode, quelle que soit la suite. Deux cas :
+
+**`CLAUDE.md` absent — le projet n'est pas cadré.** Arrête-toi ici et renvoie l'utilisateur
+vers `/new-project "<le ticket>"`, qui qualifie le besoin avec lui et écrit le cadrage
+(`docs/` + `CLAUDE.md`). Ne devine ni le périmètre ni la stack pour avancer quand même : un
+découpage bâti sur un besoin non qualifié coûte bien plus cher à défaire qu'une commande à
+retaper. `--auto` ne change rien ici — ce flag saute une confirmation, il ne remplace pas un
+cadrage inexistant.
+
+**`CLAUDE.md` présent, aucun manifeste — projet cadré, pas encore amorcé.** C'est le cas
+nominal du premier ticket après `/new-project` :
+
+1. La stack est déjà écrite : lis-la dans `CLAUDE.md` (section `Stack` + `Commandes`) et
+   reconstitue le `contexte_stack` plat attendu par la suite du flux — `outil_build` est la
+   commande de build qui y figure, `fichier_manifeste` celui qui **sera créé**. N'appelle pas
+   `detect-stack` pour la retrouver, il n'a rien à lire.
+2. Le digest se réduit au besoin du ticket et aux contraintes qui le concernent :
+   `fichiers_cibles = []`, `symboles = []`, tout est à créer. N'ouvre `docs/cadrage.md` ou
+   `docs/architecture.md` que si le ticket sort de ce que `CLAUDE.md` résume — ils existent
+   pour être lus à la demande, pas systématiquement.
+3. L'étape 2 s'applique ensuite, avec trois différences :
+   - le `contexte_researcher` filtré par `fichiers_cibles` n'a pas lieu d'être — transmets les
+     seules contraintes propres à la sous-tâche ;
+   - **ne recopie jamais dans un payload le contenu de `CLAUDE.md` ni d'un fichier de
+     `docs/`** : `CLAUDE.md` est chargé automatiquement par chaque sous-agent, et les `docs/`
+     sont à sa portée s'il en a besoin — les redonner, c'est payer deux fois le même contexte ;
+   - la **vague 1 contient une unique sous-tâche d'amorçage** (manifeste, dépendances,
+     arborescence conforme à celle du cadrage, point d'entrée, `README.md` via la skill
+     `generate-readme`) dont toutes les autres dépendent — jamais deux agents en parallèle sur
+     un projet sans manifeste, ils écriraient tous les deux le leur.
+
+### Mode existant
 
 1. Lance l'agent `researcher` avec le texte du ticket.
 2. Si `researcher` renvoie un `ambiguites` non vide : pose ces questions à l'utilisateur via
@@ -40,7 +89,8 @@ avec `Statut global: in_progress`. S'il en existe un :
 
 ## Étape 2 — découpe en tâches (fait par toi, pas un agent)
 
-À partir du digest `researcher`, produis une liste de sous-tâches :
+À partir du digest de l'étape 1 (produit par `researcher` en mode existant, par toi en mode
+greenfield), produis une liste de sous-tâches :
 
 ```
 {id, titre, type: backend|frontend|mixte, description, fichiers_cibles: [...], depends_on: [id, ...]}
