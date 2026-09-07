@@ -35,7 +35,7 @@ peu long et complet qu'un README trop court qui oblige à lire le code.
 8. **Tests / Qualité** — commandes de lint et de test (`npm test`, `npm run lint`), pour que la
    contribution reste vérifiable.
 9. **Contribuer** — lien vers `CONTRIBUTING.md` si présent, sinon règles minimales (branche,
-   convention de commit → cf. skill `commit-convention`).
+   convention de commit → cf. skill `create-pr`).
 10. **Changelog** — lien vers `CHANGELOG.md` (cf. skill `generate-changelog`), jamais dupliqué
     dans le README.
 11. **Licence** — nom + lien vers le fichier `LICENSE`.

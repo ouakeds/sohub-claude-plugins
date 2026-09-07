@@ -19,6 +19,12 @@ plugins](https://code.claude.com/docs/en/plugins-reference#plugin-directory-stru
   (`generate-openapi`, `generate-readme`, `generate-changelog`).
 - `skills/audit/` — détection + correction de non-conformités (`rgaa-check`,
   `security-audit`).
+- `skills/git/` — livraison du travail (`create-pr`) : commits conventionnels, push de la
+  branche courante, rédaction du titre et du corps de PR. Seule famille de skills qui écrit
+  dans l'historique Git, donc la seule soumise au garde-fou `git` (elle s'arrête si le hook
+  refuse, ne le contourne jamais). L'ouverture de la PR reste un geste de l'utilisateur : pas
+  d'appel `gh`/`glab`, une publication sous l'identité de quelqu'un n'est pas automatisable
+  sans son geste.
 
 Toute nouvelle skill rejoint une catégorie existante ou en ouvre une nouvelle explicitement
 déclarée dans `plugin.json` — jamais posée à plat directement sous `skills/`.

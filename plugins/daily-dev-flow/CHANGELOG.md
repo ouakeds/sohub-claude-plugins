@@ -29,6 +29,16 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 - Skills `generate-readme` et `generate-changelog` : conventions de génération/mise à jour
   de README.md et CHANGELOG.md, basées respectivement sur Make a README / Standard Readme et
   Keep a Changelog / SemVer.
+- Skill `create-pr` (nouvelle catégorie `skills/git/`) : découpe et rédige les commits selon
+  Conventional Commits 1.0.0 (+ règles de rédaction Pro Git : impératif, 50/72, quoi et
+  pourquoi plutôt que comment), pousse la branche courante (`git push -u origin HEAD`, jamais
+  `--force`, jamais sur la branche par défaut) et produit le titre et le corps de PR selon les
+  conventions GitHub — gabarit `.github/PULL_REQUEST_TEMPLATE.md` du dépôt prioritaire sur le
+  sien, mot-clé de fermeture dans le corps. Elle **n'ouvre pas** la PR (aucun appel `gh`,
+  `glab` ou API) : la publication reste un geste de l'utilisateur, sous son identité. Elle
+  s'arrête si le garde-fou `git` refuse le commit, sans jamais le contourner. Comble au passage
+  les renvois de `README.md`, `generate-readme` et `generate-changelog` vers une skill
+  `commit-convention` qui n'avait jamais été écrite.
 
 ### Fixed
 - Reprise après interruption : le `resume` de chaque sous-tâche `done` est désormais écrit dans
