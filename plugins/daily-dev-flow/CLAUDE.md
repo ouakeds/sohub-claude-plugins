@@ -39,6 +39,11 @@ plugins](https://code.claude.com/docs/en/plugins-reference#plugin-directory-stru
 Toute nouvelle skill rejoint une catégorie existante ou en ouvre une nouvelle explicitement
 déclarée dans `plugin.json` — jamais posée à plat directement sous `skills/`.
 
+`docs/flows/` porte les **chemins rares** de `/ticket` (projet cadré non amorcé, reprise après
+interruption), lus à la demande via `${CLAUDE_PLUGIN_ROOT}` quand le cas se présente — même
+principe que les gabarits : une procédure n'occupe la fenêtre que quand on s'en sert, et
+`commands/ticket.md`, rechargé à chaque invocation, ne paie que le chemin nominal.
+
 ## Gabarits du cadrage
 
 `templates/` porte la forme des fichiers que le plugin écrit dans le projet cible : les quatre

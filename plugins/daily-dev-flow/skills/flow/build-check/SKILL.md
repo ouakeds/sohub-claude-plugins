@@ -32,10 +32,17 @@ sous-projet en cas de monorepo (cf. `skills/flow/detect-stack/SKILL.md`).
 
 ## Sortie
 
+Le log complet est **écrit dans un fichier**, jamais renvoyé inline : rediriger la sortie du
+build vers `.sohub-claude-plugin/build-logs/<horodatage>.log` du projet cible (dossier créé au
+besoin, gitignoré avec le reste de `.sohub-claude-plugin/`). Le contexte de l'orchestrateur ne
+paie ainsi que ce qu'il traite réellement — un log de 400 lignes chargé puis délégué est payé
+deux fois pour rien.
+
 ```json
 {
   "succes": true,
-  "log_brut": "string",
+  "chemin_log": "chemin/relatif/du/fichier.log",
+  "queue_log": "string — les ~30 dernières lignes du log",
   "nb_lignes_log": 42,
   "outil_build_execute": "string — commande(s) exacte(s) lancée(s), tests compris"
 }
@@ -47,11 +54,12 @@ mêmes seuils d'escalade ci-dessous.
 ## Décision d'escalade vers `build-verifier`
 
 Si `succes: false` :
-- `nb_lignes_log` < 150 **et** `log_brut` < 8000 caractères → `/ticket` traite le résumé
-  elle-même en ligne, sans spawn d'agent (coût fixe d'un appel agent plus cher qu'un traitement
-  direct sur un log court).
-- Au-delà de l'un des deux seuils → `/ticket` délègue à l'agent `build-verifier` avec
-  `{log_brut, outil_build: outil_build_execute}`.
+- `nb_lignes_log` < 150 → `/ticket` traite le résumé elle-même en ligne, sans spawn d'agent,
+  depuis `queue_log`, en n'ouvrant `chemin_log` que si la queue ne suffit pas (coût fixe d'un
+  appel agent plus cher qu'un traitement direct sur un log court).
+- Au-delà → `/ticket` délègue à l'agent `build-verifier` avec
+  `{chemin_log, outil_build: outil_build_execute}` ; à partir de la deuxième tentative de la
+  boucle de correction, le delta d'erreurs plutôt que le log entier, s'il est isolable.
 
 ## Ce que cette skill ne fait pas
 

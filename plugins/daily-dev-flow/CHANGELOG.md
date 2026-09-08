@@ -45,8 +45,39 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
   tentatives de build) : pas un accroc — elle ne déclenche pas l'étape 7 seule — mais la seule
   trace qui rende un gaspillage récurrent visible.
 
+- **Un chemin court pour les tickets triviaux.** Un fix d'une ligne payait la pipeline
+  complète (planner, plan, gate, agent, double rafraîchissement du backlog — ~40-70× la valeur
+  du changement). Quand la cible est identifiable sans recherche et que le changement tient en
+  une sous-tâche évidente de quelques lignes, `/ticket` édite désormais lui-même, en ligne :
+  ni `planner`, ni fichier de plan, ni gate — règles actives du retex appliquées,
+  `build-check`, remise avec constat. Au moindre doute sur le périmètre, flux complet.
+
 ### Changed
 
+- **La boucle de correction de build a une mémoire et sait escalader.** L'agent de correction
+  était un agent neuf à chaque tentative — sans savoir ce qui avait déjà été essayé, la
+  tentative 2 rejouait la tentative 1. Le payload de retry reprend désormais le contrat
+  d'entrée normal (sous-tâche d'origine, critères, `contexte_stack`) plus `erreurs_build`
+  (ciblées sur les fichiers de l'agent) et `tentatives_precedentes` (ce qui a été essayé,
+  pourquoi ça a re-échoué). À la deuxième tentative sur la même famille d'erreur, la boucle
+  change quelque chose — log complet, fichiers élargis, ou arrêt anticipé — au lieu de griller
+  la troisième à l'identique.
+- **`build-check` écrit le log dans un fichier au lieu de le renvoyer inline.** Un log de
+  400 lignes entrait dans le contexte de l'orchestrateur avant d'être re-payé en entrée de
+  `build-verifier`. La skill renvoie désormais `chemin_log` + `queue_log` (~30 dernières
+  lignes) + `nb_lignes_log` ; le log complet vit dans `.sohub-claude-plugin/build-logs/` et
+  n'est lu que par qui le traite. `build-verifier` reçoit le chemin (et, dès la deuxième
+  tentative, le delta d'erreurs plutôt que le log entier).
+- **Moins d'appels à vide.** `planner` n'est plus lancé sur un projet fraîchement amorcé sans
+  code métier (son digest était vide) ; le backlog n'est rafraîchi qu'une fois par ticket, en
+  fin de flux (le rafraîchissement au passage `in_progress` était de la comptabilité que
+  personne ne lisait) ; et `planner` renvoie un `digest_partiel` avec ses ambiguïtés — les
+  réponses de l'utilisateur complètent le digest au lieu de relancer l'agent et de re-payer
+  toute l'exploration.
+- **`commands/ticket.md` dégraissé (~350 → ~290 lignes)** : les chemins rares — projet cadré
+  non amorcé, reprise après interruption — partent dans `docs/flows/`, lus à la demande quand
+  le cas se présente, même principe que les gabarits. La commande rechargée à chaque
+  invocation ne paie plus que le chemin nominal.
 - **Le retex est scindé en deux fichiers, et les règles actives ont un cycle de vie.**
   `retex.md` ne porte plus que `## Règles actives` et `## Enseignements plugin` — la partie
   relue à chaque découpage reste courte quel que soit l'âge du projet — tandis que le journal

@@ -49,7 +49,10 @@ Déclenche `ambiguites` (et laisse `fichiers_cibles` vide) si, après cette uniq
 
 Ne produis jamais un `fichiers_cibles` approximatif "au mieux" dans ce cas — une cible mal
 identifiée coûte bien plus cher en aval (implémentation + build à refaire) qu'une question
-posée à l'utilisateur maintenant.
+posée à l'utilisateur maintenant. Mais **ne jette pas non plus ce que tu as trouvé** : tes
+questions viennent de candidats réels — renvoie-les dans `digest_partiel`, pour que `/ticket`
+puisse compléter le digest avec les réponses de l'utilisateur au lieu de te relancer et de
+re-payer toute l'exploration.
 
 ## Contrat de sortie (JSON strict)
 
@@ -63,7 +66,15 @@ posée à l'utilisateur maintenant.
   ],
   "ambiguites": [
     { "question": "string, fermée", "options": ["option A", "option B", "..."] }
-  ]
+  ],
+  "digest_partiel": {
+    "candidats": [
+      { "option": "libellé de l'option d'ambiguïté correspondante", "fichiers_cibles": ["..."], "symboles": ["..."] }
+    ],
+    "notes": [
+      { "fichiers": ["..."], "note": "string — collectée pendant l'exploration, mêmes règles que notes" }
+    ]
+  }
 }
 ```
 
@@ -81,3 +92,9 @@ conséquences à respecter :
 sont ensuite posées par `/ticket` via `AskUserQuestion`, qui gère mal une question ouverte.
 Présent et non vide uniquement si la cible technique n'est pas identifiable avec confiance ;
 absent sinon.
+
+`digest_partiel` : présent **uniquement avec** `ambiguites`. Il porte ce que ton exploration a
+déjà établi — les candidats derrière chaque option (fichiers, symboles) et les notes déjà
+collectées — pour que `/ticket` reconstitue le digest final à partir des réponses de
+l'utilisateur sans te relancer. Mêmes exigences de véracité que le digest : uniquement des
+fichiers réellement constatés, jamais des chemins plausibles.

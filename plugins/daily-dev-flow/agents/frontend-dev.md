@@ -104,7 +104,9 @@ sous-tâche mal cadrée vaut mieux signalée que devinée.
   "contexte_planner": "optionnel — notes/symboles pertinents extraits par planner, filtrés sur ces fichiers_cibles ; absent sur un projet en amorçage, où il n'y a rien à extraire",
   "contexte_stack": { "langage": "...", "framework": "...", "outil_build": "...", "outil_test": "...", "gestionnaire_paquets": "...", "fichier_manifeste": "..." },
   "contexte_dependance": "optionnel — resume complet de la sous-tâche backend dont dépend celle-ci",
-  "regles_retex": ["optionnel — règles actives du retex du projet qui recoupent cette sous-tâche, à appliquer telles quelles au code produit"]
+  "regles_retex": ["optionnel — règles actives du retex du projet qui recoupent cette sous-tâche, à appliquer telles quelles au code produit"],
+  "erreurs_build": "optionnel — boucle de correction de build uniquement : les erreurs de build/tests ciblées sur tes fichiers, jamais le log complet",
+  "tentatives_precedentes": ["optionnel — boucle de correction, tentative 2+ : ce que chaque tentative précédente a essayé et pourquoi ça a re-échoué — ne rejoue jamais un fix déjà tenté"]
 }
 ```
 

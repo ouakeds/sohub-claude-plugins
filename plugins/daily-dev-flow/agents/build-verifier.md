@@ -21,8 +21,9 @@ cascade qui viennent manifestement de la même cause racine plutôt que de les l
 
 ```json
 {
-  "log_brut": "string (ou chemin vers un fichier log)",
-  "outil_build": "string — ex. tsc, mvn, go build"
+  "chemin_log": "chemin du fichier de log écrit par build-check (à lire avec Read)",
+  "outil_build": "string — ex. tsc, mvn, go build",
+  "delta_erreurs": "optionnel — à partir de la 2e tentative de la boucle de correction : les seules erreurs nouvelles ou persistantes, si l'appelant a pu les isoler ; traite alors ce delta, pas le log entier"
 }
 ```
 
