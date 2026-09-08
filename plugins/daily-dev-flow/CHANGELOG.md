@@ -8,6 +8,14 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`create-pr` embarque la documentation dans la PR.** Nouvelle étape 3 « Documentation
+  embarquée » : avant les commits, la skill déduit du diff réel les mises à jour de
+  `CHANGELOG.md` (entrées sous `Unreleased`, convention `generate-changelog`, mapping type de
+  commit → catégorie) et de `README.md` (seulement sur changement structurant — installation,
+  commande, API publique, configuration — convention `generate-readme`). Les plans de
+  `.sohub-claude-plugin/plans/` servent à formuler l'impact utilisateur, jamais à affirmer ce
+  que le diff ne montre pas. La mise à jour de doc rejoint le commit du changement qu'elle
+  documente ; une refonte plus large fait son propre commit `docs:`.
 - **Le flux `/ticket` apprend de ses accrocs : étape 7 « retex ».** Pendant l'exécution,
   l'orchestrateur consigne les signaux au fil de l'eau dans une nouvelle section
   `## Signaux retex` du fichier de plan (découpage modifié à la gate, sous-tâche `failed`,
