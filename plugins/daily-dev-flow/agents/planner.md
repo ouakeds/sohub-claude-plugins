@@ -23,7 +23,12 @@ dans ce cas ; si ça arrive, sors en un tour plutôt que d'explorer le vide.
 
 ## Stratégie de recherche
 
-1. Interroge en priorité le MCP `code-review-graph` (recherche sémantique, overview
+0. **Cible textuelle → grep d'abord.** Si le ticket cite un texte affiché, un nom de fichier,
+   une route ou un symbole localisable tel quel, commence par `Grep`/`Glob` : la recherche
+   sémantique sert les besoins diffus, pas la localisation d'une chaîne — et ne lance jamais
+   `build_or_update_graph_tool` (construction potentiellement lourde du graphe) pour une
+   cible qu'un grep trouve en un appel.
+1. Sinon, interroge en priorité le MCP `code-review-graph` (recherche sémantique, overview
    d'architecture, contexte minimal) sur le besoin décrit dans le ticket — il te donne un
    contexte pertinent bien plus vite qu'un grep aveugle qui noierait le résultat dans du bruit.
    Si `semantic_search_nodes_tool` échoue faute de graphe déjà construit pour ce repo, appelle
@@ -49,7 +54,10 @@ Déclenche `ambiguites` (et laisse `fichiers_cibles` vide) si, après cette uniq
 
 Ne produis jamais un `fichiers_cibles` approximatif "au mieux" dans ce cas — une cible mal
 identifiée coûte bien plus cher en aval (implémentation + build à refaire) qu'une question
-posée à l'utilisateur maintenant.
+posée à l'utilisateur maintenant. Mais **ne jette pas non plus ce que tu as trouvé** : tes
+questions viennent de candidats réels — renvoie-les dans `digest_partiel`, pour que `/ticket`
+puisse compléter le digest avec les réponses de l'utilisateur au lieu de te relancer et de
+re-payer toute l'exploration.
 
 ## Contrat de sortie (JSON strict)
 
@@ -57,15 +65,29 @@ posée à l'utilisateur maintenant.
 {
   "besoin_fonctionnel": "string — reformulation claire et concise du besoin",
   "fichiers_cibles": ["chemin/relatif/fichier.ext", "..."],
-  "symboles": ["NomDeFonction", "NomDeComposant", "..."],
+  "symboles": [
+    { "nom": "NomDeFonction", "fichiers": ["chemin/relatif/fichier.ext"] }
+  ],
   "notes": [
     { "fichiers": ["chemin/relatif/fichier.ext"], "note": "string — contrainte ou pattern existant à respecter" }
   ],
   "ambiguites": [
     { "question": "string, fermée", "options": ["option A", "option B", "..."] }
-  ]
+  ],
+  "digest_partiel": {
+    "candidats": [
+      { "option": "libellé de l'option d'ambiguïté correspondante", "fichiers_cibles": ["..."], "symboles": ["..."] }
+    ],
+    "notes": [
+      { "fichiers": ["..."], "note": "string — collectée pendant l'exploration, mêmes règles que notes" }
+    ]
+  }
 }
 ```
+
+`symboles` : chaque symbole porte les fichiers où tu l'as constaté — même règle de routage que
+les notes : `/ticket` filtre par intersection avec les `fichiers_cibles` d'une sous-tâche, un
+symbole sans fichier est infiltrable donc inutilisable.
 
 `notes` : une liste, pas un paragraphe — chaque entrée porte les fichiers qu'elle concerne,
 pour que `/ticket` puisse la router vers la seule sous-tâche qui touche ces fichiers. Deux
@@ -81,3 +103,9 @@ conséquences à respecter :
 sont ensuite posées par `/ticket` via `AskUserQuestion`, qui gère mal une question ouverte.
 Présent et non vide uniquement si la cible technique n'est pas identifiable avec confiance ;
 absent sinon.
+
+`digest_partiel` : présent **uniquement avec** `ambiguites`. Il porte ce que ton exploration a
+déjà établi — les candidats derrière chaque option (fichiers, symboles) et les notes déjà
+collectées — pour que `/ticket` reconstitue le digest final à partir des réponses de
+l'utilisateur sans te relancer. Mêmes exigences de véracité que le digest : uniquement des
+fichiers réellement constatés, jamais des chemins plausibles.

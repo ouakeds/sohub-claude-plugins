@@ -89,7 +89,8 @@ la première exécution.
 #### Hors scope (v1)
 
 - Intégration Jira/Linear/GitHub Issues (ticket collé manuellement).
-- Tests automatisés.
+- Couverture de test générale (le flux écrit uniquement les tests qui traduisent les critères
+  de validation — un critère, un test).
 - Code review approfondie packagée dans le plugin (le skill `/code-review` global de
   l'utilisateur est suggéré en fin de flux).
 

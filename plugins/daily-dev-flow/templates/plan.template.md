@@ -14,7 +14,7 @@ Créé le: <AAAA-MM-JJ>
 
 | Item | Validé par |
 |------|------------|
-| <D1 — libellé de l'item> | <critère recopié mot pour mot de docs/cadrage.md> |
+| <D1 — libellé de l'item, ou `hors backlog`> | <critère — recopié mot pour mot de docs/cadrage.md ; pour un lot `hors backlog`, rédigé au lancement et validé à la gate> |
 
 ## Fichiers prévus
 
@@ -32,7 +32,8 @@ Créé le: <AAAA-MM-JJ>
 
 ## Découpage
 
-<Rempli au lancement du lot : id, titre, type, fichiers_cibles, depends_on, statut.>
+<Rempli au lancement du lot : id, titre, type, fichiers_cibles, criteres_validation,
+depends_on, statut.>
 
 ## Vagues d'exécution
 
@@ -47,5 +48,7 @@ portant son `resume` complet.>
 
 <Rempli pendant l'exécution, seulement quand quelque chose accroche : une ligne datée par
 signal — découpage modifié à la gate, sous-tâche `failed`, tentative de la boucle de build,
-critère non rempli, consigne corrective de l'utilisateur. Reste vide sur un ticket sans
-accroc.>
+critère non rempli, consigne corrective de l'utilisateur, ambiguïtés posées (et réponses),
+reprise après interruption, override de la gate de dépendance. Plus la ligne de compteurs de
+l'étape 6 (agents, vagues, tentatives de build), qui ne compte pas comme un accroc. Reste
+vide, compteurs exceptés, sur un ticket sans accroc.>

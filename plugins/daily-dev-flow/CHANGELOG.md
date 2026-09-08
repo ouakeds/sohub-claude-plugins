@@ -6,7 +6,135 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-08
+
 ### Added
+
+- **Les critères de validation traversent désormais le flux de bout en bout, et chaque critère
+  devient un test.** Jusqu'ici les critères — pièce maîtresse du cadrage — mouraient dans le
+  fichier de plan : jamais transmis aux agents, jamais vérifiés (« fini » se réduisait à « ça
+  compile »). Désormais : chaque sous-tâche reçoit ses critères dans son payload
+  (`criteres_validation`, recopiés mot pour mot), l'agent dev traduit chaque critère en un test
+  avec le harness du projet (`contexte_stack.outil_test`, détecté par `detect-stack`, tranché
+  au cadrage par la nouvelle brique « outil de test » de `/new-project`), `build-check` lance
+  build **et** tests, et la synthèse de `/ticket` rend un constat par critère — `constaté par
+  test` (fichier de test cité) ou `à constater par l'utilisateur` (geste + résultat attendu).
+  Aucun test au-delà des critères : le périmètre de test est le périmètre de validation. Lève
+  l'interdit « pas de tests en v1 » (évolution consignée dans `PLAN.md`).
+- **Un ticket ad hoc porte désormais des critères de validation.** Un ticket libre n'en héritait
+  d'aucun cadrage ; l'orchestrateur les rédige depuis le texte du ticket (un critère observable
+  par sous-tâche, aucun chiffre inventé), les fait valider à la gate — ce qui les rend
+  *déclarés* — et les consigne dans le plan (`rédigé au lancement`) ; en `--auto`, ils restent
+  dans le plan comme arbitrages visibles, à la manière de ce que `/new-project --auto` consigne
+  dans `docs/decisions.md`.
+- **Un ticket ad hoc est confronté au `Hors scope` du cadrage** : si la demande recoupe un item
+  hors scope de `docs/cadrage.md`, `/ticket` le signale avant d'avancer — un choix déclaré au
+  cadrage ne s'annule pas silencieusement par un ticket.
+- **La boucle d'auto-amélioration se ferme côté plugin : les enseignements sont persistés et
+  récoltables.** Un enseignement sur le plugin lui-même n'était que « signalé à l'utilisateur
+  en une ligne » — perdu à la fermeture de session, récurrence inter-projets indétectable.
+  L'étape 7 l'écrit désormais dans la section `## Enseignements plugin` du `retex.md` du
+  projet (ligne datée : ticket, constat, amélioration suggérée), et la nouvelle skill
+  `harvest-retex` (user-invocable, lancée depuis le repo du plugin) récolte ces sections dans
+  les projets cibles, regroupe par récurrence, et rend des améliorations actionnables du
+  plugin — fichier et section visés, changement proposé — à choisir puis implémenter. Lecture
+  seule côté projets, rien d'appliqué sans accord.
+- **Le capteur retex s'élargit au-delà des échecs bruyants.** Nouveaux signaux consignés dans
+  `## Signaux retex` du plan : ambiguïtés posées et réponses (une même question qui revient de
+  ticket en ticket est un contexte manquant), reprise après interruption, override de la gate
+  de dépendance (l'utilisateur peut forcer un lot dont la dépendance n'est pas `done` — c'est
+  tracé). Plus une **ligne de compteurs** écrite par l'étape 6 (agents spawnés, vagues,
+  tentatives de build) : pas un accroc — elle ne déclenche pas l'étape 7 seule — mais la seule
+  trace qui rende un gaspillage récurrent visible.
+
+- **Un chemin court pour les tickets triviaux.** Un fix d'une ligne payait la pipeline
+  complète (planner, plan, gate, agent, double rafraîchissement du backlog — ~40-70× la valeur
+  du changement). Quand la cible est identifiable sans recherche et que le changement tient en
+  une sous-tâche évidente de quelques lignes, `/ticket` édite désormais lui-même, en ligne :
+  ni `planner`, ni fichier de plan, ni gate — règles actives du retex appliquées,
+  `build-check`, remise avec constat. Au moindre doute sur le périmètre, flux complet.
+
+### Changed
+
+- **La boucle de correction de build a une mémoire et sait escalader.** L'agent de correction
+  était un agent neuf à chaque tentative — sans savoir ce qui avait déjà été essayé, la
+  tentative 2 rejouait la tentative 1. Le payload de retry reprend désormais le contrat
+  d'entrée normal (sous-tâche d'origine, critères, `contexte_stack`) plus `erreurs_build`
+  (ciblées sur les fichiers de l'agent) et `tentatives_precedentes` (ce qui a été essayé,
+  pourquoi ça a re-échoué). À la deuxième tentative sur la même famille d'erreur, la boucle
+  change quelque chose — log complet, fichiers élargis, ou arrêt anticipé — au lieu de griller
+  la troisième à l'identique.
+- **`build-check` écrit le log dans un fichier au lieu de le renvoyer inline.** Un log de
+  400 lignes entrait dans le contexte de l'orchestrateur avant d'être re-payé en entrée de
+  `build-verifier`. La skill renvoie désormais `chemin_log` + `queue_log` (~30 dernières
+  lignes) + `nb_lignes_log` ; le log complet vit dans `.sohub-claude-plugin/build-logs/` et
+  n'est lu que par qui le traite. `build-verifier` reçoit le chemin (et, dès la deuxième
+  tentative, le delta d'erreurs plutôt que le log entier).
+- **Moins d'appels à vide.** `planner` n'est plus lancé sur un projet fraîchement amorcé sans
+  code métier (son digest était vide) ; le backlog n'est rafraîchi qu'une fois par ticket, en
+  fin de flux (le rafraîchissement au passage `in_progress` était de la comptabilité que
+  personne ne lisait) ; et `planner` renvoie un `digest_partiel` avec ses ambiguïtés — les
+  réponses de l'utilisateur complètent le digest au lieu de relancer l'agent et de re-payer
+  toute l'exploration.
+- **`commands/ticket.md` dégraissé (~350 → ~290 lignes)** : les chemins rares — projet cadré
+  non amorcé, reprise après interruption — partent dans `docs/flows/`, lus à la demande quand
+  le cas se présente, même principe que les gabarits. La commande rechargée à chaque
+  invocation ne paie plus que le chemin nominal.
+- **Le retex est scindé en deux fichiers, et les règles actives ont un cycle de vie.**
+  `retex.md` ne porte plus que `## Règles actives` et `## Enseignements plugin` — la partie
+  relue à chaque découpage reste courte quel que soit l'âge du projet — tandis que le journal
+  des suggestions part dans `retex-historique.md` (nouveau gabarit), lu par la seule étape 7,
+  qui migre automatiquement un `## Historique` au format antérieur. À l'acceptation d'une
+  règle, les règles en place sont relues : doublon fusionné, contradiction arbitrée par
+  l'utilisateur (l'autre règle passe `retirée`), et au-delà d'une dizaine de règles une fusion
+  ou un retrait est proposé avant tout ajout. Deux cas jusqu'ici ambigus sont tranchés : une
+  suggestion rejetée dont le signal récidive se re-présente **une seule fois**, en citant le
+  rejet — re-rejetée, plus jamais ; un « Décider plus tard » se re-présente à la prochaine
+  occurrence du même signal, jamais sans.
+- La clé `regles_retex`, promise par l'étape 2 de `/ticket`, entre au **contrat d'entrée** de
+  `backend-dev` et `frontend-dev` — la dernière maille de la chaîne d'amélioration n'était pas
+  branchée côté agents.
+- **L'amorçage n'existe plus qu'à un seul endroit.** Nouvelle skill interne
+  `bootstrap-project` : ce qui s'écrit, ce qui ne s'écrit jamais, le build de fumée et les
+  garde-fous vivaient en deux proses indépendantes (`/new-project` étape 11 et le chemin
+  « cadré non amorcé » de `/ticket`) — le second avait d'ailleurs déjà perdu le build de
+  fumée. Les deux commandes invoquent désormais la même skill, exécutée en ligne, jamais
+  déléguée à un agent.
+- **Le tronc commun des agents dev part dans `conventions/agent-dev-protocole.md`.** Les
+  fiches `backend-dev` et `frontend-dev` étaient identiques à ~75 % (contrats, cas premier
+  ticket, blocage) — deux copies vouées à diverger, et déjà divergées sur les payloads de
+  retry. Le protocole porte contrats d'entrée/sortie et cas particuliers à un seul endroit ;
+  chaque fiche ne garde que sa spécificité de couche. Le contrat de sortie gagne
+  `resume.contrats_produits` (nature + signature réelle de tout ce que la sous-tâche
+  expose) : c'est lui que `contexte_dependance` transporte — trois phrases de synthèse ne
+  transportaient pas un contrat d'API, ce qui forçait `frontend-dev` à relire les fichiers
+  backend.
+- **Contrat `planner` resserré** : chaque symbole est rattaché aux fichiers où il a été
+  constaté (comme les notes — un symbole sans fichier était infiltrable par l'intersection de
+  l'étape 2) ; une note qui ne recoupe aucune sous-tâche est remontée (découpage incomplet ou
+  information pour la gate), jamais perdue en silence ; et une cible textuelle (texte affiché,
+  fichier ou symbole cité) se cherche au grep **avant** la recherche sémantique — jamais de
+  construction de graphe pour localiser une chaîne.
+- **Une reprise ne fait plus confiance aveugle au disque.** Les statuts `in_progress` sont
+  écrits sur la vague et les sous-tâches **au lancement** (le schéma le prévoyait, aucune
+  étape ne le commandait — une interruption laissait un plan qui mentait sur l'état réel).
+  À la reprise, toute sous-tâche interrompue est relancée avec `avertissement_reprise` et la
+  liste `git status`/`git diff` des fichiers touchés non committés : l'agent vérifie et
+  réécrit plutôt que d'imiter un contenu partiel — qui peut très bien compiler — ou de le
+  croire terminé.
+- **Le multi-session est traité là où il cassait.** L'étape 0 ne propose plus de
+  « reprendre » un plan `in_progress` quand `$ARGUMENTS` désigne un autre lot (il tourne
+  peut-être dans une autre session) ; la gate de dépendance distingue un lot `todo` (à lancer
+  d'abord) d'un `in_progress` (à attendre, pas à relancer) ; les fichiers retex — cumulatifs,
+  non régénérables, donc hors du périmètre de la « course sans gravité » de `BACKLOG.md` —
+  sont relus juste avant chaque écriture et fusionnés ; et la numérotation `NNNN` re-scanne
+  `plans/` juste avant d'écrire (deux sessions pouvaient calculer le même max+1).
+- **Le backlog ne peut plus être orphelin.** Sur un cadrage interrompu avant l'étape 12, le
+  flux « cadré non amorcé » de `/ticket` invoque désormais `generate-backlog` en mode
+  génération après l'amorçage et propose le lot couvrant la demande, au lieu de continuer en
+  ad hoc pour toujours ; et le mode rafraîchissement lit explicitement le `Dans` de
+  `docs/cadrage.md` pour calculer « Reste à couvrir » — les en-têtes `Couvre:` ne peuvent pas
+  dire ce qu'aucun lot ne couvre.
 
 - **`create-pr` embarque la documentation dans la PR.** Nouvelle étape 3 « Documentation
   embarquée » : avant les commits, la skill déduit du diff réel les mises à jour de
@@ -295,6 +423,7 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 - Skills `detect-stack`, `build-check`, `openapi-doc`, `rgaa-check`, `security-audit`.
 - Intégration MCP `code-review-graph` pour l'agent `researcher`, avec fallback grep/glob.
 
-[Unreleased]: https://github.com/ouakeds/sohub-claude-plugins/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ouakeds/sohub-claude-plugins/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ouakeds/sohub-claude-plugins/compare/v0.2.1...v0.5.0
 [0.2.0]: https://github.com/ouakeds/sohub-claude-plugins/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ouakeds/sohub-claude-plugins/releases/tag/v0.1.0

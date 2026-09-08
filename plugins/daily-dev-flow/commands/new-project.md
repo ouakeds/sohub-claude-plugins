@@ -190,6 +190,9 @@ Chaque brique fait l'objet d'un choix explicite, groupées en un ou deux tours d
   visualisation — une question à part entière, jamais un détail déduit du framework ;
 - **gestion d'état ou équivalent**, seulement si le choix engage la structure du code ;
 - **gestionnaire de paquets** ;
+- **outil de test** : le harness qui portera les tests des critères de validation (chaque
+  critère du cadrage sera traduit en test par `/ticket`) — une brique comme les autres,
+  proposée et tranchée, jamais déduite du framework ;
 - **distribution et lancement** : usage local, packaging, cibles, commande de démarrage.
 
 Trois règles pour que ces questions soient utiles :
@@ -367,45 +370,13 @@ le disque. Ce geste ne demande aucun arbitrage — il ne peut donc rien apprendr
 qu'il ne lirait pas dans `docs/`. Le déléguer au premier `/ticket` y coûtait une vague entière
 et un agent pour recopier ce que tu viens d'écrire, en sérialisant tout le reste derrière lui.
 
-Tu l'exécutes toi-même, en ligne, sans agent.
-
-**Ce que tu écris, et rien d'autre :**
-
-- le **manifeste** du gestionnaire de paquets tranché à l'étape 4, avec les scripts exacts de
-  la section `Commandes` de `CLAUDE.md` — aucun script en plus ;
-- les **dépendances** de la stack, installées par la commande d'installation du cadrage. Les
-  versions sont celles que le gestionnaire résout : tu n'en épingles aucune que l'utilisateur
-  n'ait choisie ;
-- les **dossiers** de l'arborescence de `docs/architecture.md` ;
-- les **fichiers de contrats** — types partagés, schémas, constantes d'interface — **recopiés
-  tels quels** depuis la section Contrats de `docs/architecture.md`. C'est la pièce qui compte :
-  un contrat posé sur disque est un contrat que deux agents lancés en parallèle ne peuvent plus
-  inventer chacun de leur côté, donc une dépendance de moins entre les sous-tâches du premier
-  ticket ;
-- la **configuration de build et d'outillage** — compilateur, bundler, style, ports, proxy —
-  telle que le cadrage la fixe ;
-- le **point d'entrée** de chaque exécutable, réduit à ce qui le fait démarrer ;
-- le `.gitignore` : au minimum les artefacts de build, les dépendances installées et
-  `.sohub-claude-plugin/` ;
-- le `README.md`, via la skill `generate-readme`.
-
-**Ce que tu n'écris jamais** : un fichier de l'arborescence qui porte un item du périmètre —
-vue, écran, composant, module métier, endpoint. Pas même vide, pas même « provisoire ». Un
-placeholder est payé deux fois — tu l'écris, un agent le réécrit — et surtout il met le même
-fichier dans les `fichiers_cibles` de deux sous-tâches, ce qui interdit exactement le
-parallélisme que cette étape existe pour rendre possible. La règle de tri est mécanique : tu
-poses ce dont `docs/` fixe déjà la **forme**, tu laisses tout ce dont il ne fixe que le
-**rôle**.
-
-**Puis lance l'installation et le build** du cadrage. C'est le premier moment où il devient
-falsifiable : une stack dont les briques ne s'installent pas ensemble tombe ici, en une
-question à l'utilisateur, au lieu de tomber trois tentatives plus loin dans la boucle de
-correction du ticket 0001, sur un projet déjà à moitié écrit. Si ça casse, c'est un défaut du
-cadrage : corrige-le avec l'utilisateur et consigne l'arbitrage dans `docs/decisions.md` —
-jamais un contournement silencieux glissé dans un fichier de configuration.
-
-**N'écrase aucun fichier existant** à cette étape : un projet déjà amorcé se complète, il ne se
-réinitialise pas.
+Invoque la skill `bootstrap-project` et exécute sa procédure toi-même, en ligne, sans agent.
+Elle porte, à un seul endroit, ce qui s'écrit (manifeste, dépendances, dossiers, contrats
+recopiés, configuration de build et de test, points d'entrée, `.gitignore`, README via
+`generate-readme`), ce qui ne s'écrit jamais (aucun fichier portant un item du périmètre, pas
+même provisoire), le **build de fumée** qui rend le cadrage falsifiable, et les garde-fous
+(rien d'écrasé, aucune version épinglée non choisie). `/ticket` invoque la même skill sur un
+projet cadré non amorcé : l'amorçage n'existe qu'à cet endroit.
 
 Donne le résultat du build en une ligne, puis enchaîne sur l'étape 12.
 

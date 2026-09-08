@@ -14,11 +14,17 @@ dans un dépôt qui héberge potentiellement plusieurs plugins (cf. `.claude-plu
 cumulative dans `.claude-plugin/plugin.json`, champ `skills` — cf. [doc officielle des
 plugins](https://code.claude.com/docs/en/plugins-reference#plugin-directory-structure)) :
 
-- `skills/flow/` — outillage du flux, consommé par les deux commandes : `detect-stack` et
-  `build-check` (internes à `commands/ticket.md`, jamais invoquées par l'utilisateur), et
+- `skills/flow/` — outillage du flux, consommé par les deux commandes : `detect-stack`,
+  `build-check` et `bootstrap-project` (internes, jamais invoquées par l'utilisateur —
+  `bootstrap-project` porte l'amorçage à un seul endroit pour `/new-project` étape 11 et le
+  chemin « cadré non amorcé » de `/ticket`),
   `generate-backlog`, appelée par `/new-project` en fin de cadrage et par `/ticket` à chaque
   changement de statut — celle-là est `user-invocable`, parce que régénérer le backlog après une
-  évolution du périmètre est un geste que l'utilisateur veut poser lui-même.
+  évolution du périmètre est un geste que l'utilisateur veut poser lui-même — et
+  `harvest-retex`, `user-invocable` aussi : elle se lance depuis le repo du **plugin** pour
+  récolter les sections `## Enseignements plugin` des retex de projets cibles et les
+  transformer en améliorations actionnables du plugin. C'est la moitié retour de la boucle
+  d'auto-amélioration, l'étape 7 de `/ticket` en étant la moitié aller.
 - `skills/documentation/` — génération/convention de documentation du projet cible
   (`generate-openapi`, `generate-readme`, `generate-changelog`).
 - `skills/audit/` — détection + correction de non-conformités (`rgaa-check`,
@@ -35,13 +41,20 @@ plugins](https://code.claude.com/docs/en/plugins-reference#plugin-directory-stru
 Toute nouvelle skill rejoint une catégorie existante ou en ouvre une nouvelle explicitement
 déclarée dans `plugin.json` — jamais posée à plat directement sous `skills/`.
 
+`docs/flows/` porte les **chemins rares** de `/ticket` (projet cadré non amorcé, reprise après
+interruption), lus à la demande via `${CLAUDE_PLUGIN_ROOT}` quand le cas se présente — même
+principe que les gabarits : une procédure n'occupe la fenêtre que quand on s'en sert, et
+`commands/ticket.md`, rechargé à chaque invocation, ne paie que le chemin nominal.
+
 ## Gabarits du cadrage
 
 `templates/` porte la forme des fichiers que le plugin écrit dans le projet cible : les quatre
 du cadrage — `cadrage.template.md`, `architecture.template.md`, `decisions.template.md`,
 `CLAUDE.template.md` — plus `plan.template.md`, la forme d'un lot de travail,
-`BACKLOG.template.md`, celle de la vue d'ensemble, et `retex.template.md`, celle du retour
-d'expérience cumulé. Ce sont des
+`BACKLOG.template.md`, celle de la vue d'ensemble, et `retex.template.md` +
+`retex-historique.template.md`, celles du retour d'expérience cumulé — scindé en deux fichiers
+pour que la partie relue à chaque découpage (règles actives, enseignements plugin) reste
+courte, l'historique n'étant lu qu'à l'étape 7. Ce sont des
 **squelettes nus** — titres, ordre des sections, forme des tableaux, marqueurs `<…>` — sans
 consigne de remplissage : les consignes vivent dans `commands/new-project.md`,
 `skills/flow/generate-backlog/` et, pour le retex, l'étape 7 de `commands/ticket.md` — à un
@@ -73,6 +86,13 @@ gabarit — pas l'improviser dans un projet.
 `backend.md` et `frontend.md` (une couche chacune), et `lang/<langage>.md` pour ce qui ne se dit
 qu'en TypeScript, en Java ou en Kotlin. `backend-dev` et `frontend-dev` les lisent en tête de
 sous-tâche, via `${CLAUDE_PLUGIN_ROOT}`.
+
+`conventions/agent-dev-protocole.md` est d'une autre nature : le **tronc commun des deux
+agents dev** — contrats d'entrée/sortie, cas particuliers (premier ticket, boucle de
+correction, reprise), règles de blocage. Les deux fiches d'agent le référencent et ne portent
+que leur spécificité de couche : un champ de payload ne se définit qu'à cet endroit, une clé
+décrite en deux endroits est une clé qui diverge — c'est le même argument que pour les
+conventions, appliqué au protocole.
 
 **Des fichiers lus, pas une skill** : les deux agents de développement n'ont pas l'outil `Skill`
 (même contrainte que pour `generate-readme`, cf. `commands/ticket.md`). Faire porter la
@@ -118,12 +138,15 @@ de deviner. Conséquence voulue : le découpage, le plan, les vagues et la boucl
 n'existent qu'à un seul endroit (`commands/ticket.md`), jamais dupliqués dans un chemin
 d'amorçage parallèle.
 
-**L'amorçage n'est jamais une sous-tâche d'agent.** C'est la recopie de ce que `docs/` fixe
-déjà : le déléguer coûte un agent et une vague entière, sérialise le premier ticket derrière
-lui, et met le contrat partagé sous la plume d'un agent au lieu de le poser sur disque **avant**
-le découpage — or c'est précisément ce contrat sur disque qui permet à backend et frontend de
-partir ensemble en vague 1. Corollaire : rien de ce qui est amorcé n'est « provisoire », sans
-quoi le même fichier se retrouve cible de deux sous-tâches et bloque leur parallélisme.
+**L'amorçage n'est jamais une sous-tâche d'agent, et il n'existe qu'à un seul endroit** : la
+skill `bootstrap-project`, exécutée en ligne par la commande appelante (`/new-project`
+étape 11, ou le flux « cadré non amorcé » de `/ticket`). C'est la recopie de ce que `docs/`
+fixe déjà : le déléguer coûte un agent et une vague entière, sérialise le premier ticket
+derrière lui, et met le contrat partagé sous la plume d'un agent au lieu de le poser sur
+disque **avant** le découpage — or c'est précisément ce contrat sur disque qui permet à
+backend et frontend de partir ensemble en vague 1. Corollaire : rien de ce qui est amorcé
+n'est « provisoire », sans quoi le même fichier se retrouve cible de deux sous-tâches et
+bloque leur parallélisme.
 
 **Pourquoi une commande et pas un agent « chef de produit »** : un sous-agent est isolé, son
 seul canal de retour est son rapport final — il ne peut pas poser de question à l'utilisateur.
@@ -247,6 +270,12 @@ de cible technique moins précise.
   résultat constatable. Le skill les rédige à partir de l'usage décrit puis les fait valider en
   bloc, ce qui les rend *déclarés* au sens de la règle de sourçage. Sans eux, aucune sous-tâche
   de `/ticket` ne sait à quoi ressemble « fini ».
+- **Les critères traversent le flux de bout en bout** : recopiés du lot (ou rédigés à la gate
+  d'un ticket ad hoc), ils descendent dans le payload de chaque sous-tâche
+  (`criteres_validation`), chaque critère est traduit en un test par l'agent dev
+  (`contexte_stack.outil_test`), `build-check` lance build **et** tests, et l'étape 6 rend un
+  constat par critère — `constaté par test` ou `à constater par l'utilisateur`. L'orchestrateur
+  ne déclare jamais un critère rempli lui-même.
 - **Zéro hypothèse structurante** : une hypothèse dont dépend un choix d'implémentation (seuil,
   transport, format d'échange, cible externe, comportement d'erreur) est vérifiée ou posée en
   question. Ne restent marquées `> Hypothèse` que les faits externes non vérifiables, et chacune
@@ -292,9 +321,14 @@ Tout artefact généré par le plugin (plans, audits, doc OpenAPI) est écrit da
 `.sohub-claude-plugin/` à la racine du **projet cible** (jamais dans le plugin lui-même), sous
 un sous-dossier par nature (`plans/`, `audit/`, `documentations/`), avec un numéro de version
 `NNNN` auto-incrémenté par sous-dossier — jamais réutilisé, jamais écrasé. Exception assumée :
-`.sohub-claude-plugin/retex.md` est un fichier **unique et cumulatif**, édité en place par
+`.sohub-claude-plugin/retex.md` (règles actives + enseignements plugin, relu au découpage) et
+`.sohub-claude-plugin/retex-historique.md` (journal des suggestions et de leurs statuts, lu à
+l'étape 7 seulement) sont des fichiers **uniques et cumulatifs**, édités en place par
 l'étape 7 de `/ticket` — un retex versionné par ticket perdrait sa raison d'être, qui est de
-porter les règles actives relues au découpage de chaque ticket suivant.
+porter les règles actives relues au découpage de chaque ticket suivant. Étant cumulatifs et
+non régénérables, ces deux fichiers ne bénéficient **pas** de l'argument « course sans
+gravité » qui protège `BACKLOG.md` (simple rendu) : l'étape 7 les re-lit juste avant chaque
+écriture et fusionne, au lieu d'écraser ce qu'une session parallèle a pu y déposer.
 `.sohub-claude-plugin/` est gitignoré automatiquement à la première exécution (ajout d'une
 ligne au `.gitignore` du projet cible si elle n'y est pas déjà).
 
@@ -321,6 +355,8 @@ en revue. Un `CLAUDE.md` existant n'est jamais écrasé, et `docs/decisions.md` 
 ## Hors scope v1
 
 - Intégration Jira/Linear/GitHub Issues (ticket collé manuellement).
-- Tests automatisés.
+- Couverture de test générale : les seuls tests que le flux écrit sont la traduction des
+  critères de validation portés par les sous-tâches (un critère = un test), jamais une passe
+  de couverture au-delà.
 - Code review approfondie packagée dans le plugin (le skill `/code-review` global de
   l'utilisateur est suggéré en fin de flux, jamais dupliqué en interne).
