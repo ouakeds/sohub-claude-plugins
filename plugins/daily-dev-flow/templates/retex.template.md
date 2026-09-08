@@ -4,11 +4,6 @@
 
 - <règle acceptée, une ligne, applicable telle quelle au découpage ou aux sous-tâches>
 
-## Historique
+## Enseignements plugin
 
-### <AAAA-MM-JJ> — ticket <NNNN> — <résumé court>
-
-- Type : <règle de convention | amélioration de découpage | contexte manquant>
-- Signal : <ce qui a accroché, factuel, repris de `## Signaux retex` du plan>
-- Suggestion : <la règle ou l'amélioration proposée>
-- Statut : <proposée|acceptée|rejetée>
+- <AAAA-MM-JJ — ticket NNNN — constat sur le plugin lui-même + amélioration suggérée, une ligne>

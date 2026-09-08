@@ -31,7 +31,10 @@ qui n'a jamais été lancé, pas une exécution interrompue, et le proposer en r
 l'étape 1. S'il existe un plan `in_progress` :
 - Propose à l'utilisateur de reprendre à la première vague non `done`, ou d'abandonner ce plan
   pour en démarrer un nouveau.
-- Si reprise : saute directement à l'étape 4 en repartant du plan existant (ne relance ni
+- Si reprise : consigne-la d'abord dans `## Signaux retex` du plan (ligne datée : reprise
+  après interruption, vague relancée) — des reprises récurrentes sont un signal que le flux
+  casse quelque part, matière de l'étape 7. Puis saute directement à l'étape 4 en repartant du
+  plan existant (ne relance ni
   `planner` ni le découpage). Relis d'abord la section `## Résultats` du plan : elle contient
   les `resume` des sous-tâches déjà `done`, dont tu tireras les `contexte_dependance` des vagues
   restantes. Si un `resume` attendu y manque (plan écrit avant cette convention, ou vague
@@ -54,7 +57,10 @@ a donc pas de besoin à extraire ni de digest à reconstituer : tu tiens l'entr�
 - **Gate de dépendance** : si un lot cité en `Dépend de:` n'est pas `Statut global: done`,
   arrête-toi et dis lequel lancer d'abord. Une dépendance de lot vient d'un fichier commun ou
   d'un contrat non encore produit : passer outre, c'est faire écrire à un agent la moitié d'un
-  fichier que le lot précédent réécrira.
+  fichier que le lot précédent réécrira. Si l'utilisateur décide de passer outre malgré ton
+  arrêt, c'est sa décision — applique-la, mais consigne l'override dans `## Signaux retex` du
+  plan lancé (ligne datée : dépendance non `done`, lancement forcé) : si le risque se
+  matérialise, le retex saura d'où il venait.
 - Un lot déjà `done` ne se relance pas : signale-le plutôt que d'en refaire le découpage.
 - En **mode existant**, lance quand même `planner` : le code a bougé depuis le cadrage, et
   son digest **complète** les `Fichiers prévus` du lot, il ne les remplace pas. En mode
@@ -134,7 +140,11 @@ avant elle, ou d'un projet cadré par une version antérieure du plugin :
 1. Lance l'agent `planner` avec le texte du ticket.
 2. Si `planner` renvoie un `ambiguites` non vide : pose ces questions à l'utilisateur via
    `AskUserQuestion` (une question par entrée, options fermées telles que fournies) et **arrête-toi
-   ici** en attendant sa réponse — pas de découpage sur une cible non identifiée.
+   ici** en attendant sa réponse — pas de découpage sur une cible non identifiée. Les
+   ambiguïtés posées et les réponses obtenues se consignent à l'étape 3, à l'écriture du plan :
+   dans `Cible technique` (ce sont des décisions, le support de reprise doit les porter) et en
+   une ligne datée de `## Signaux retex` — une même question qui revient de ticket en ticket
+   est un `contexte manquant` que l'étape 7 doit voir.
 3. Une fois le digest confirmé, lance la skill `detect-stack` **une seule fois** pour tout le
    ticket. Stocke son résultat brut, jamais redétecté ensuite. **Cas monorepo** : si le résultat
    est indexé par sous-projet (plusieurs clés type `backend/`, `frontend/`) plutôt qu'un objet
@@ -175,7 +185,7 @@ greenfield), produis une liste de sous-tâches :
   digest complet à chaque sous-tâche : c'est du bruit et du coût token inutile pour une
   sous-tâche qui ne touche qu'un sous-ensemble des fichiers.
 - **Règles actives du retex** : si `.sohub-claude-plugin/retex.md` existe dans le projet cible,
-  lis sa seule section `## Règles actives` — jamais `## Historique`, qui ne sert qu'à l'étape 7
+  lis sa section `## Règles actives` — jamais `retex-historique.md`, qui ne sert qu'à l'étape 7
   — et applique ces règles au découpage. Une règle qui recoupe une sous-tâche précise descend
   dans son payload à l'étape 4 (clé `regles_retex`), recopiée telle quelle, jamais reformulée —
   même régime que les contrats. Fichier absent = aucune règle, on n'en invente pas.
@@ -297,6 +307,11 @@ Un critère sans test **et** sans constat possible est un signal retex (« crit�
 rempli ») : consigne-le dans `## Signaux retex` du plan. Tu ne déclares jamais un critère
 rempli toi-même — un test vert constate, le reste appartient à l'utilisateur.
 
+Écris aussi, dans `## Signaux retex`, la **ligne de compteurs** du ticket, datée : agents
+spawnés (par type), vagues exécutées, tentatives de build. Ce n'est pas un accroc — elle ne
+déclenche pas l'étape 7 à elle seule — mais c'est la seule trace qui rend un gaspillage
+récurrent visible : sans elle, un ticket trivial payé au prix fort ne remonte jamais.
+
 Puis invoque `generate-backlog` en mode rafraîchissement pour que `BACKLOG.md` reflète le
 nouveau statut, et termine par les **lots prêts à partir** — les `todo` dont toutes les
 dépendances sont `done` — sous la forme copiable `/daily-dev-flow:ticket NNNN`. S'ils sont
@@ -308,32 +323,54 @@ l'utilisateur voit où en est le backlog sans avoir à ouvrir huit fichiers.
 
 ## Étape 7 — retex
 
-**Seulement si la section `## Signaux retex` du plan est non vide.** Sinon cette étape n'existe
-pas : ne produis ni fichier, ni entrée, ni message « rien à signaler » — une rétro sans signal
-est du bruit. Elle s'exécute après l'étape 6 sur un ticket `done`, et directement après
+**Seulement si la section `## Signaux retex` du plan contient autre chose que la ligne de
+compteurs de l'étape 6.** Sinon cette étape n'existe pas : ne produis ni fichier, ni entrée,
+ni message « rien à signaler » — une rétro sans signal est du bruit, et les compteurs seuls ne
+sont pas un accroc. Elle s'exécute après l'étape 6 sur un ticket `done`, et directement après
 l'étape 5 sur un ticket `failed`.
+
+Le retex vit dans deux fichiers : `.sohub-claude-plugin/retex.md` — court, relu à chaque
+découpage (règles actives + enseignements plugin) — et `.sohub-claude-plugin/retex-historique.md`,
+lu et écrit seulement ici. Crée chacun depuis son gabarit
+(`${CLAUDE_PLUGIN_ROOT}/templates/retex.template.md` / `retex-historique.template.md`) s'il
+n'existe pas. **Migration** : si `retex.md` porte encore une section `## Historique` (format
+antérieur), déplace-la une fois vers `retex-historique.md` avant toute autre écriture.
 
 1. Relis les signaux du ticket et déduis-en des **suggestions actionnables**, chacune typée :
    `règle de convention` (propre au projet cible), `amélioration de découpage`, `contexte
    manquant`. Une suggestion doit pouvoir citer le signal qui la fonde ; pas de signal, pas de
-   suggestion.
+   suggestion. La ligne de compteurs de l'étape 6 n'est pas un signal en soi, mais sa
+   récurrence en est un : trois tickets dont les compteurs montrent le même gaspillage (mêmes
+   tentatives de build, même agent relancé) fondent une suggestion comme n'importe quel accroc.
 2. Trie par destination : un enseignement **propre au projet cible** (convention de sa stack,
-   piège de son code) va dans son `retex.md` ; un enseignement **sur le plugin lui-même**
-   (découpage systématiquement fautif, boucle de build gaspillée, agent mal outillé) ne se
-   stocke pas côté projet — signale-le à l'utilisateur en une ligne comme amélioration possible
-   du plugin, sans le faire entrer dans le flux des questions du point 4.
-3. Crée `.sohub-claude-plugin/retex.md` depuis `${CLAUDE_PLUGIN_ROOT}/templates/retex.template.md`
-   s'il n'existe pas. Sinon, relis son `## Historique` avant d'écrire : une suggestion déjà
-   `rejetée` ne se repropose pas à l'identique, et un signal déjà vu sur un ticket précédent se
-   présente comme **récurrence** — suggestion plus appuyée, citant les tickets concernés.
-4. Ajoute chaque suggestion en tête de `## Historique` avec `Statut : proposée`, puis
+   piège de son code) suit les points 3 à 5. Un enseignement **sur le plugin lui-même**
+   (découpage systématiquement fautif, boucle de build gaspillée, agent mal outillé) n'entre
+   pas dans le flux des questions : ajoute-le en une ligne datée sous `## Enseignements
+   plugin` de `retex.md` (ticket, constat, amélioration suggérée) **et** signale-le à
+   l'utilisateur en une ligne. C'est cette section que la skill `harvest-retex`, lancée depuis
+   le repo du plugin, récolte pour transformer les enseignements accumulés en améliorations du
+   plugin — une ligne perdue en fin de session est un enseignement qui n'existera jamais.
+3. Relis `retex-historique.md` avant d'écrire :
+   - une suggestion déjà `rejetée` dont le signal **revient** se re-présente **une seule
+     fois**, en citant explicitement le rejet et les tickets concernés ; re-rejetée, elle ne
+     revient plus jamais ;
+   - une suggestion restée `proposée` (« Décider plus tard ») se re-présente à la prochaine
+     occurrence du même signal — jamais sans nouvelle occurrence ;
+   - un signal déjà vu sur un ticket précédent se présente comme **récurrence** — suggestion
+     plus appuyée, citant les tickets concernés.
+4. Ajoute chaque suggestion en tête de `retex-historique.md` avec `Statut : proposée`, puis
    présente-les à l'utilisateur via `AskUserQuestion` — une question par suggestion, options
    `Accepter` / `Rejeter` / `Décider plus tard`. `--auto` ne saute pas cette gate : elle arrive
    après le travail, elle ne bloque rien.
 5. Selon la réponse : `Accepter` → statut `acceptée` dans l'historique **et** la règle,
-   reformulée en une ligne, ajoutée sous `## Règles actives` (c'est elle que l'étape 2 relira
-   aux tickets suivants) ; `Rejeter` → statut `rejetée`, l'entrée reste dans l'historique
-   précisément pour ne pas revenir ; `Décider plus tard` → reste `proposée`, sans relance.
+   reformulée en une ligne, ajoutée sous `## Règles actives` de `retex.md` (c'est elle que
+   l'étape 2 relira aux tickets suivants) ; `Rejeter` → statut `rejetée`, l'entrée reste dans
+   l'historique précisément pour ne pas revenir ; `Décider plus tard` → reste `proposée`
+   (cf. point 3). **Avant d'ajouter une règle active, relis les règles en place** : un doublon
+   se fusionne au lieu de s'ajouter ; une contradiction se signale — c'est l'utilisateur qui
+   dit laquelle garder, l'autre passe `retirée` dans l'historique et sort des règles actives ;
+   au-delà d'une dizaine de règles, propose une fusion ou un retrait avant d'ajouter — une
+   liste que plus personne ne relit en entier ne cadre plus rien.
 6. Tu n'appliques jamais rien toi-même : une règle `acceptée` vit dans `retex.md`, et n'est
    promue dans le `CLAUDE.md` du projet cible ou ailleurs que si l'utilisateur le demande
    explicitement.

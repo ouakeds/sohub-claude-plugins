@@ -103,7 +103,8 @@ sous-tâche mal cadrée vaut mieux signalée que devinée.
   "criteres_validation": ["critère observable recopié du plan, jamais reformulé — chacun se traduit en un test"],
   "contexte_planner": "optionnel — notes/symboles pertinents extraits par planner, filtrés sur ces fichiers_cibles ; absent sur un projet en amorçage, où il n'y a rien à extraire",
   "contexte_stack": { "langage": "...", "framework": "...", "outil_build": "...", "outil_test": "...", "gestionnaire_paquets": "...", "fichier_manifeste": "..." },
-  "contexte_dependance": "optionnel — resume complet de la sous-tâche backend dont dépend celle-ci"
+  "contexte_dependance": "optionnel — resume complet de la sous-tâche backend dont dépend celle-ci",
+  "regles_retex": ["optionnel — règles actives du retex du projet qui recoupent cette sous-tâche, à appliquer telles quelles au code produit"]
 }
 ```
 

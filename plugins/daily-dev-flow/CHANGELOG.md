@@ -28,6 +28,39 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 - **Un ticket ad hoc est confronté au `Hors scope` du cadrage** : si la demande recoupe un item
   hors scope de `docs/cadrage.md`, `/ticket` le signale avant d'avancer — un choix déclaré au
   cadrage ne s'annule pas silencieusement par un ticket.
+- **La boucle d'auto-amélioration se ferme côté plugin : les enseignements sont persistés et
+  récoltables.** Un enseignement sur le plugin lui-même n'était que « signalé à l'utilisateur
+  en une ligne » — perdu à la fermeture de session, récurrence inter-projets indétectable.
+  L'étape 7 l'écrit désormais dans la section `## Enseignements plugin` du `retex.md` du
+  projet (ligne datée : ticket, constat, amélioration suggérée), et la nouvelle skill
+  `harvest-retex` (user-invocable, lancée depuis le repo du plugin) récolte ces sections dans
+  les projets cibles, regroupe par récurrence, et rend des améliorations actionnables du
+  plugin — fichier et section visés, changement proposé — à choisir puis implémenter. Lecture
+  seule côté projets, rien d'appliqué sans accord.
+- **Le capteur retex s'élargit au-delà des échecs bruyants.** Nouveaux signaux consignés dans
+  `## Signaux retex` du plan : ambiguïtés posées et réponses (une même question qui revient de
+  ticket en ticket est un contexte manquant), reprise après interruption, override de la gate
+  de dépendance (l'utilisateur peut forcer un lot dont la dépendance n'est pas `done` — c'est
+  tracé). Plus une **ligne de compteurs** écrite par l'étape 6 (agents spawnés, vagues,
+  tentatives de build) : pas un accroc — elle ne déclenche pas l'étape 7 seule — mais la seule
+  trace qui rende un gaspillage récurrent visible.
+
+### Changed
+
+- **Le retex est scindé en deux fichiers, et les règles actives ont un cycle de vie.**
+  `retex.md` ne porte plus que `## Règles actives` et `## Enseignements plugin` — la partie
+  relue à chaque découpage reste courte quel que soit l'âge du projet — tandis que le journal
+  des suggestions part dans `retex-historique.md` (nouveau gabarit), lu par la seule étape 7,
+  qui migre automatiquement un `## Historique` au format antérieur. À l'acceptation d'une
+  règle, les règles en place sont relues : doublon fusionné, contradiction arbitrée par
+  l'utilisateur (l'autre règle passe `retirée`), et au-delà d'une dizaine de règles une fusion
+  ou un retrait est proposé avant tout ajout. Deux cas jusqu'ici ambigus sont tranchés : une
+  suggestion rejetée dont le signal récidive se re-présente **une seule fois**, en citant le
+  rejet — re-rejetée, plus jamais ; un « Décider plus tard » se re-présente à la prochaine
+  occurrence du même signal, jamais sans.
+- La clé `regles_retex`, promise par l'étape 2 de `/ticket`, entre au **contrat d'entrée** de
+  `backend-dev` et `frontend-dev` — la dernière maille de la chaîne d'amélioration n'était pas
+  branchée côté agents.
 
 - **`create-pr` embarque la documentation dans la PR.** Nouvelle étape 3 « Documentation
   embarquée » : avant les commits, la skill déduit du diff réel les mises à jour de

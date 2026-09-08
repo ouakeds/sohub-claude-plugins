@@ -15,10 +15,14 @@ cumulative dans `.claude-plugin/plugin.json`, champ `skills` — cf. [doc offici
 plugins](https://code.claude.com/docs/en/plugins-reference#plugin-directory-structure)) :
 
 - `skills/flow/` — outillage du flux, consommé par les deux commandes : `detect-stack` et
-  `build-check` (internes à `commands/ticket.md`, jamais invoquées par l'utilisateur), et
+  `build-check` (internes à `commands/ticket.md`, jamais invoquées par l'utilisateur),
   `generate-backlog`, appelée par `/new-project` en fin de cadrage et par `/ticket` à chaque
   changement de statut — celle-là est `user-invocable`, parce que régénérer le backlog après une
-  évolution du périmètre est un geste que l'utilisateur veut poser lui-même.
+  évolution du périmètre est un geste que l'utilisateur veut poser lui-même — et
+  `harvest-retex`, `user-invocable` aussi : elle se lance depuis le repo du **plugin** pour
+  récolter les sections `## Enseignements plugin` des retex de projets cibles et les
+  transformer en améliorations actionnables du plugin. C'est la moitié retour de la boucle
+  d'auto-amélioration, l'étape 7 de `/ticket` en étant la moitié aller.
 - `skills/documentation/` — génération/convention de documentation du projet cible
   (`generate-openapi`, `generate-readme`, `generate-changelog`).
 - `skills/audit/` — détection + correction de non-conformités (`rgaa-check`,
@@ -40,8 +44,10 @@ déclarée dans `plugin.json` — jamais posée à plat directement sous `skills
 `templates/` porte la forme des fichiers que le plugin écrit dans le projet cible : les quatre
 du cadrage — `cadrage.template.md`, `architecture.template.md`, `decisions.template.md`,
 `CLAUDE.template.md` — plus `plan.template.md`, la forme d'un lot de travail,
-`BACKLOG.template.md`, celle de la vue d'ensemble, et `retex.template.md`, celle du retour
-d'expérience cumulé. Ce sont des
+`BACKLOG.template.md`, celle de la vue d'ensemble, et `retex.template.md` +
+`retex-historique.template.md`, celles du retour d'expérience cumulé — scindé en deux fichiers
+pour que la partie relue à chaque découpage (règles actives, enseignements plugin) reste
+courte, l'historique n'étant lu qu'à l'étape 7. Ce sont des
 **squelettes nus** — titres, ordre des sections, forme des tableaux, marqueurs `<…>` — sans
 consigne de remplissage : les consignes vivent dans `commands/new-project.md`,
 `skills/flow/generate-backlog/` et, pour le retex, l'étape 7 de `commands/ticket.md` — à un
@@ -298,7 +304,9 @@ Tout artefact généré par le plugin (plans, audits, doc OpenAPI) est écrit da
 `.sohub-claude-plugin/` à la racine du **projet cible** (jamais dans le plugin lui-même), sous
 un sous-dossier par nature (`plans/`, `audit/`, `documentations/`), avec un numéro de version
 `NNNN` auto-incrémenté par sous-dossier — jamais réutilisé, jamais écrasé. Exception assumée :
-`.sohub-claude-plugin/retex.md` est un fichier **unique et cumulatif**, édité en place par
+`.sohub-claude-plugin/retex.md` (règles actives + enseignements plugin, relu au découpage) et
+`.sohub-claude-plugin/retex-historique.md` (journal des suggestions et de leurs statuts, lu à
+l'étape 7 seulement) sont des fichiers **uniques et cumulatifs**, édités en place par
 l'étape 7 de `/ticket` — un retex versionné par ticket perdrait sa raison d'être, qui est de
 porter les règles actives relues au découpage de chaque ticket suivant.
 `.sohub-claude-plugin/` est gitignoré automatiquement à la première exécution (ajout d'une

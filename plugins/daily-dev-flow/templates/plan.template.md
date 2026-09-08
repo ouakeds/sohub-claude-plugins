@@ -48,5 +48,7 @@ portant son `resume` complet.>
 
 <Rempli pendant l'exécution, seulement quand quelque chose accroche : une ligne datée par
 signal — découpage modifié à la gate, sous-tâche `failed`, tentative de la boucle de build,
-critère non rempli, consigne corrective de l'utilisateur. Reste vide sur un ticket sans
-accroc.>
+critère non rempli, consigne corrective de l'utilisateur, ambiguïtés posées (et réponses),
+reprise après interruption, override de la gate de dépendance. Plus la ligne de compteurs de
+l'étape 6 (agents, vagues, tentatives de build), qui ne compte pas comme un accroc. Reste
+vide, compteurs exceptés, sur un ticket sans accroc.>
