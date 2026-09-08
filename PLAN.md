@@ -12,7 +12,7 @@ Plugin Claude Code autonome (roster d'agents propre, générique multi-stack) qu
 - **Roster d'agents** : autonome, packagé dans le plugin (n'utilise pas le Jarvis du CLAUDE.md global).
 - **Vérification finale** : compilation/build uniquement (pas de lint, pas de tests en v1).
 - **Retries de correction build** : 3 tentatives max avant remontée à l'utilisateur.
-- **Ticket ambigu (cible technique non identifiable)** : **tranché** — le `researcher`/la commande `/ticket`
+- **Ticket ambigu (cible technique non identifiable)** : **tranché** — le `planner`/la commande `/ticket`
   bloque et pose des questions précises à l'utilisateur avant de continuer (pas d'hypothèse silencieuse).
 - **Persistance des plans/rapports** : tout artefact généré (plan de ticket, audit sécurité, doc OpenAPI)
   est écrit dans un dossier unique `.sohub-claude-plugin/` à la racine du **projet cible**, sous un
@@ -28,7 +28,7 @@ Elle absorbe elle-même la logique de découpage/ordonnancement (ex-`task-router
 du build (via la skill `build-check`) — pas besoin d'un agent isolé pour du pur enchaînement sans
 outillage ni bruit à contenir.
 
-1. **Recherche de contexte** (`researcher`)
+1. **Recherche de contexte** (`planner`)
    Agent read-only. Extrait le besoin fonctionnel du ticket et localise la cible technique
    (fichiers/modules concernés) en interrogeant le **code-review-graph** (recherche sémantique,
    contexte minimal, overview d'architecture) plutôt qu'en grepant le repo à l'aveugle.
@@ -40,7 +40,7 @@ outillage ni bruit à contenir.
    ensuite propagé tel quel à toutes les sous-tâches de l'étape 4 (`backend-dev`/`frontend-dev`)
    et réutilisé par `build-check` à l'étape 5 — **une seule détection de stack pour tout le
    flux**, jamais redevinée en doublon par chaque agent.
-2. **Découpe en tâches** (fait par la commande `/ticket` elle-même, à partir du digest `researcher`)
+2. **Découpe en tâches** (fait par la commande `/ticket` elle-même, à partir du digest `planner`)
    Pas d'agent dédié : c'est une décision d'orchestration, pas une tâche à isoler. Produit une liste
    de sous-tâches selon ce schéma :
    ```
@@ -49,7 +49,7 @@ outillage ni bruit à contenir.
    `contexte_stack` (issu de `detect-stack`, cf. étape 1) n'est pas répété par sous-tâche dans le
    plan écrit — une seule fois dans l'en-tête `Cible technique` du fichier de plan — mais est bien
    inclus dans le payload transmis à chaque appel `backend-dev`/`frontend-dev` à l'étape 4.
-   `depends_on` vient du digest `researcher` (ex : un endpoint qu'un composant frontend doit consommer)
+   `depends_on` vient du digest `planner` (ex : un endpoint qu'un composant frontend doit consommer)
    et de recoupements évidents (deux sous-tâches touchant le même fichier/module → dépendance, pas
    parallélisme). Les sous-tâches sont ensuite regroupées en **vagues d'exécution** : vague 1 = toutes
    celles sans `depends_on`, vague 2 = celles dont les dépendances sont dans la vague 1, etc. — c'est
@@ -60,7 +60,7 @@ outillage ni bruit à contenir.
    - `NNNN` = prochain numéro disponible dans le sous-dossier (scan des fichiers existants, max+1,
      zero-paddé sur 4 chiffres) ; `<slug>` = kebab-case dérivé du besoin fonctionnel, tronqué (~40 car).
    - Contenu du fichier : `Besoin fonctionnel`, `Cible technique` (fichiers/symboles du digest
-     `researcher`), `Découpage` (tableau des sous-tâches avec leur schéma **+ un champ `statut`**:
+     `planner`), `Découpage` (tableau des sous-tâches avec leur schéma **+ un champ `statut`**:
      `pending|in_progress|done|failed`), `Vagues d'exécution` (chaque vague porte aussi un `statut`),
      et `Questions` si le ticket était ambigu — la commande s'arrête à cette étape et attend les réponses
      de l'utilisateur avant de générer le découpage (cf. décision "Ticket ambigu" ci-dessus). Un en-tête
@@ -83,7 +83,7 @@ outillage ni bruit à contenir.
    - **Reprise sur interruption** : au lancement de `/ticket`, si un fichier de plan avec
      `Statut global: in_progress` existe déjà dans `.sohub-claude-plugin/plans/` pour ce projet, la
      commande le détecte, propose de reprendre à la première vague non `done` (au lieu de relancer
-     `researcher` et le découpage depuis zéro), ou de l'abandonner pour démarrer un nouveau plan.
+     `planner` et le découpage depuis zéro), ou de l'abandonner pour démarrer un nouveau plan.
 5. **Vérification build** (skill `build-check`, lancée par la commande)
    Détecte l'outil de build de la stack (package.json → tsc/eslint, pom.xml → mvn, go.mod → go build,
    etc.) et l'exécute directement en Bash. Boucle de correction (3 tentatives max) en re-déléguant
@@ -109,7 +109,7 @@ claude-dev-plugin/                          # dépôt = marketplace
         ├── .claude-plugin/plugin.json      # manifeste (nom, version, description)
         ├── .mcp.json                       # config MCP requise (code-review-graph : uvx code-review-graph serve)
         ├── agents/
-        │   ├── researcher.md               # read-only, code-review-graph : besoin fonctionnel + cible technique
+        │   ├── planner.md               # read-only, code-review-graph : besoin fonctionnel + cible technique
         │   ├── backend-dev.md
         │   ├── frontend-dev.md
         │   └── build-verifier.md           # optionnel — isole un log de build volumineux, résume les erreurs
@@ -167,4 +167,4 @@ adaptés pour écrire leur sortie versionnée dans `.sohub-claude-plugin/`.
 ~~Scaffolder l'arborescence ci-dessus.~~ Fait. Arborescence en place (`.claude-plugin/`,
 `agents/`, `skills/`, `commands/`, `CLAUDE.md`). Reste : tester `/ticket` sur un vrai ticket
 dans un projet cible réel pour valider les contrats de bout en bout (notamment le mapping
-`researcher` → `contexte_researcher` filtré, et la boucle de correction build).
+`planner` → `contexte_planner` filtré, et la boucle de correction build).

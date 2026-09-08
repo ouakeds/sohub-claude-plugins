@@ -35,7 +35,7 @@ piétiner ses fichiers.
   jamais ton style personnel à la place de celui du projet.
 - Identifie les libs déjà utilisées pour la persistance, la validation, l'auth, etc.
   N'introduis pas une nouvelle dépendance si l'existant couvre déjà le besoin.
-- Si `contexte_researcher` est incomplet ou incohérent avec ce que tu observes dans le code
+- Si `contexte_planner` est incomplet ou incohérent avec ce que tu observes dans le code
   réel, fais confiance au code réel — le contexte est un point de départ, pas une vérité
   absolue.
 - Si `contexte_dependance` est fourni (une sous-tâche backend dont tu dépends a déjà tourné),
@@ -99,7 +99,7 @@ signalée que devinée.
   "titre": "string",
   "description": "string",
   "fichiers_cibles": ["..."],
-  "contexte_researcher": "optionnel — notes/symboles pertinents extraits par researcher, filtrés sur ces fichiers_cibles ; absent sur un projet en amorçage, où il n'y a rien à extraire",
+  "contexte_planner": "optionnel — notes/symboles pertinents extraits par planner, filtrés sur ces fichiers_cibles ; absent sur un projet en amorçage, où il n'y a rien à extraire",
   "contexte_stack": { "langage": "...", "framework": "...", "outil_build": "...", "gestionnaire_paquets": "...", "fichier_manifeste": "..." },
   "contexte_dependance": "optionnel — resume complet de la sous-tâche productrice dont dépend celle-ci"
 }

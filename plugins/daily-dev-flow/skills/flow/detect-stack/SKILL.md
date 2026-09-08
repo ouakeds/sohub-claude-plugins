@@ -49,7 +49,7 @@ Objet plat :
    la lit sans appeler cette skill. Si elle est appelée quand même, renvoie `null`
    explicitement plutôt qu'une stack inventée.
 1. **Monorepo / manifestes multiples** : privilégier le manifeste le plus proche des
-   `fichiers_cibles` identifiés par `researcher`, pas systématiquement celui à la racine.
+   `fichiers_cibles` identifiés par `planner`, pas systématiquement celui à la racine.
 2. Priorité : manifeste explicite > extension de fichier > convention de nommage, en cas de
    signaux contradictoires.
 3. **Deux stacks légitimes dans le même repo** (ex. `backend/` en Go + `frontend/` en

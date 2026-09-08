@@ -171,7 +171,7 @@ redescend en question fermée (étape 6). Écrire « constaté absent » sur la 
 vide est une affirmation non sourcée, au même titre qu'un chiffre inventé.
 
 Ce que la vérification échoue à établir ne devient pas une supposition silencieuse : c'est une
-question (étape 6) ou une hypothèse résiduelle marquée. Ne lance ni `researcher`, ni
+question (étape 6) ou une hypothèse résiduelle marquée. Ne lance ni `planner`, ni
 `detect-stack` : tu n'analyses pas un code source, tu vérifies des faits.
 
 ## Étape 4 — trancher la stack avec l'utilisateur (lignes 4 et 6)

@@ -1,10 +1,11 @@
 ---
 name: create-pr
 description: >
-  Prépare une pull request de bout en bout : découpe et rédige les commits selon Conventional
-  Commits, pousse la branche courante vers le remote, puis produit le titre et le corps de PR
-  prêts à coller. À utiliser quand un travail est terminé et doit partir en revue. N'ouvre
-  jamais la PR elle-même — aucun appel à `gh`, `glab` ou une API de forge.
+  Prépare une pull request de bout en bout : met à jour README.md et CHANGELOG.md d'après le
+  diff réel (conventions generate-readme / generate-changelog), découpe et rédige les commits
+  selon Conventional Commits, pousse la branche courante vers le remote, puis produit le titre
+  et le corps de PR prêts à coller. À utiliser quand un travail est terminé et doit partir en
+  revue. N'ouvre jamais la PR elle-même — aucun appel à `gh`, `glab` ou une API de forge.
 ---
 
 # create-pr
@@ -114,7 +115,33 @@ diff réel, jamais d'un souvenir de ce qui a été fait dans la session. Relire 
 non suivis apparus (lignes `??` de `git status --porcelain`) : ce sont eux qui font entrer un
 secret ou un artefact dans l'historique.
 
-### 3. Commits
+### 3. Documentation embarquée (CHANGELOG.md, README.md)
+
+La PR part avec sa documentation : une entrée de changelog écrite plus tard, dans une autre
+session, se rédige de mémoire ; celle écrite ici se déduit du diff qu'on vient de relire.
+
+- **CHANGELOG.md** — si le diff porte un changement notable pour l'utilisateur du projet,
+  ajouter les entrées sous `## [Unreleased]` selon la convention
+  `skills/documentation/generate-changelog` : structure Keep a Changelog, mapping type de
+  commit → catégorie (`feat` → Added, ou Changed si extension d'existant ; `fix` → Fixed ;
+  breaking → Changed avec mention explicite ; `refactor`/`style`/`chore`/`test` n'y entrent
+  pas). Reformuler l'impact du point de vue de l'utilisateur du projet, jamais coller un
+  message de commit. Fichier absent et changement notable → le créer depuis la structure de la
+  convention.
+- **README.md** — uniquement sur changement structurant visible dans le diff : nouveau
+  prérequis ou étape d'installation, nouvelle commande, changement d'API publique ou de
+  configuration. Mettre à jour les seules sections concernées, selon la convention
+  `skills/documentation/generate-readme` ; un diff qui ne change pas l'usage ne touche pas au
+  README. Fichier absent → le créer (c'est le cas « doit être créé » de la convention).
+- **Les plans comme matière, le diff comme autorité** : si le travail vient d'un lot de
+  `.sohub-claude-plugin/plans/` (le plan `in_progress`/`done` le plus récent), ses sections
+  `Besoin fonctionnel` et `## Résultats` donnent la bonne formulation de l'impact utilisateur —
+  mais rien ne s'écrit dans la doc que le diff ne montre pas : un plan annonce, le diff prouve.
+- **Découpage** : la mise à jour de doc rejoint le commit du changement qu'elle documente —
+  l'entrée de changelog rend le commit relisible seul. Une refonte documentaire plus large que
+  le changement fait son propre commit `docs:`.
+
+### 4. Commits
 
 Un message multi-ligne s'écrit depuis un fichier ou l'entrée standard (`git commit -F`), jamais
 par empilement de `-m` :
@@ -131,7 +158,7 @@ Refs: #412
 Après chaque commit, vérifier le résultat (`git log -1 --stat`) et corriger un message fautif
 tant qu'il n'est pas poussé (`git commit --amend`) — jamais après.
 
-### 4. Push sur la branche courante
+### 5. Push sur la branche courante
 
 ```bash
 git push -u origin HEAD
@@ -144,7 +171,7 @@ git push -u origin HEAD
   divergence à l'utilisateur : rebaser ou merger est sa décision, pas celle de la skill.
 - Pas de remote configuré → s'arrêter et le dire, ne pas en inventer un.
 
-### 5. Rédaction de la PR
+### 6. Rédaction de la PR
 
 Si le dépôt fournit `.github/PULL_REQUEST_TEMPLATE.md` (ou
 `.github/pull_request_template.md`, ou un fichier sous `.github/PULL_REQUEST_TEMPLATE/`),
@@ -194,7 +221,7 @@ Règles de rédaction :
 - Aucun identifiant de session, URL de conversation ou lien vers un outil interne, ni dans le
   corps ni dans les commits que la PR embarque — même règle que pour les trailers.
 
-### 6. Remise à l'utilisateur
+### 7. Remise à l'utilisateur
 
 Sortie finale, en un seul bloc :
 
@@ -216,4 +243,6 @@ appeler d'outil de forge pour créer quoi que ce soit.
 - Ne contourne jamais le garde-fou git ; en cas de refus du hook, elle s'arrête.
 - Ne relit pas le code sur le fond (cf. `/code-review`) et ne lance pas les tests ni le build
   (cf. `skills/flow/build-check`) : elle rapporte leur état, elle ne le décrète pas.
-- Ne met pas à jour le `CHANGELOG.md` (cf. `skills/documentation/generate-changelog`).
+- Ne porte pas les conventions de documentation : la forme du `CHANGELOG.md` et du `README.md`
+  vit dans `skills/documentation/generate-changelog` et `generate-readme` — cette skill les
+  applique, elle ne les duplique pas. Et elle ne documente rien que le diff ne montre pas.

@@ -32,7 +32,7 @@ l'étape 1. S'il existe un plan `in_progress` :
 - Propose à l'utilisateur de reprendre à la première vague non `done`, ou d'abandonner ce plan
   pour en démarrer un nouveau.
 - Si reprise : saute directement à l'étape 4 en repartant du plan existant (ne relance ni
-  `researcher` ni le découpage). Relis d'abord la section `## Résultats` du plan : elle contient
+  `planner` ni le découpage). Relis d'abord la section `## Résultats` du plan : elle contient
   les `resume` des sous-tâches déjà `done`, dont tu tireras les `contexte_dependance` des vagues
   restantes. Si un `resume` attendu y manque (plan écrit avant cette convention, ou vague
   interrompue en cours d'écriture), ne l'invente pas : signale-le et laisse la sous-tâche
@@ -56,7 +56,7 @@ a donc pas de besoin à extraire ni de digest à reconstituer : tu tiens l'entr�
   d'un contrat non encore produit : passer outre, c'est faire écrire à un agent la moitié d'un
   fichier que le lot précédent réécrira.
 - Un lot déjà `done` ne se relance pas : signale-le plutôt que d'en refaire le découpage.
-- En **mode existant**, lance quand même `researcher` : le code a bougé depuis le cadrage, et
+- En **mode existant**, lance quand même `planner` : le code a bougé depuis le cadrage, et
   son digest **complète** les `Fichiers prévus` du lot, il ne les remplace pas. En mode
   greenfield, ne le lance pas — il n'y a rien à trouver de plus que ce que le lot porte déjà.
 
@@ -73,7 +73,7 @@ ticket.
 
 ### Mode greenfield — le cadrage n'est pas ton travail
 
-Ni `researcher` (rien à chercher) ni `detect-stack` (aucun manifeste à lire) ne sont lancés
+Ni `planner` (rien à chercher) ni `detect-stack` (aucun manifeste à lire) ne sont lancés
 dans ce mode, quelle que soit la suite. Deux cas :
 
 **`CLAUDE.md` absent — le projet n'est pas cadré.** Arrête-toi ici et renvoie l'utilisateur
@@ -114,7 +114,7 @@ avant elle, ou d'un projet cadré par une version antérieure du plugin :
    partent ensemble en vague 1** ; il ne reste de dépendance qu'entre sous-tâches qui se
    touchent réellement.
 4. L'étape 2 s'applique ensuite, avec trois différences :
-   - le `contexte_researcher` filtré par `fichiers_cibles` n'a pas lieu d'être — transmets les
+   - le `contexte_planner` filtré par `fichiers_cibles` n'a pas lieu d'être — transmets les
      seules contraintes propres à la sous-tâche ;
    - **les contrats de `docs/architecture.md` traversent le découpage** : une sous-tâche qui
      produit ou consomme un contrat le reçoit dans son payload, recopié tel quel, jamais
@@ -126,8 +126,8 @@ avant elle, ou d'un projet cadré par une version antérieure du plugin :
 
 ### Mode existant
 
-1. Lance l'agent `researcher` avec le texte du ticket.
-2. Si `researcher` renvoie un `ambiguites` non vide : pose ces questions à l'utilisateur via
+1. Lance l'agent `planner` avec le texte du ticket.
+2. Si `planner` renvoie un `ambiguites` non vide : pose ces questions à l'utilisateur via
    `AskUserQuestion` (une question par entrée, options fermées telles que fournies) et **arrête-toi
    ici** en attendant sa réponse — pas de découpage sur une cible non identifiée.
 3. Une fois le digest confirmé, lance la skill `detect-stack` **une seule fois** pour tout le
@@ -139,14 +139,14 @@ avant elle, ou d'un projet cadré par une version antérieure du plugin :
 
 ## Étape 2 — découpe en tâches (fait par toi, pas un agent)
 
-À partir du digest de l'étape 1 (produit par `researcher` en mode existant, par toi en mode
+À partir du digest de l'étape 1 (produit par `planner` en mode existant, par toi en mode
 greenfield), produis une liste de sous-tâches :
 
 ```
 {id, titre, type: backend|frontend|mixte, description, fichiers_cibles: [...], depends_on: [id, ...]}
 ```
 
-- `depends_on` vient des dépendances explicites relevées par `researcher` (ex. un endpoint
+- `depends_on` vient des dépendances explicites relevées par `planner` (ex. un endpoint
   qu'un composant frontend doit consommer) et des recoupements évidents (deux sous-tâches
   touchant le même fichier/module → dépendance, jamais parallélisme). Un même fichier dans les
   `fichiers_cibles` de deux sous-tâches est presque toujours un défaut de découpage, pas une
@@ -155,7 +155,7 @@ greenfield), produis une liste de sous-tâches :
 - Regroupe ensuite les sous-tâches en **vagues d'exécution** : vague 1 = sans `depends_on`,
   vague 2 = dépendances toutes dans la vague 1, etc. C'est ce regroupement qui pilote le
   parallélisme de l'étape 4.
-- Pour chaque sous-tâche, prépare déjà le `contexte_researcher` filtré qui lui sera transmis :
+- Pour chaque sous-tâche, prépare déjà le `contexte_planner` filtré qui lui sera transmis :
   le `besoin_fonctionnel` global, plus les entrées de `notes` dont le champ `fichiers` recoupe
   les `fichiers_cibles` de cette sous-tâche, plus les `symboles` qui y apparaissent. Le
   filtrage est mécanique — une intersection de listes, pas une reformulation : ne réécris ni ne
@@ -209,12 +209,12 @@ Pour chaque vague, dans l'ordre :
    sous-tâches de la vague — typiquement `backend-dev` et `frontend-dev` sur des sous-tâches
    disjointes. Jamais de parallélisation sur deux sous-tâches qui touchent le même fichier.
 2. Construis le payload de chaque sous-tâche : `id, titre, description, fichiers_cibles,
-   contexte_researcher` (filtré, cf. étape 2), `contexte_stack` — objet plat identique pour
+   contexte_planner` (filtré, cf. étape 2), `contexte_stack` — objet plat identique pour
    toutes en cas de stack unique ; **en cas de résultat indexé par sous-projet (monorepo)**,
    sélectionne la clé dont le préfixe de répertoire correspond aux `fichiers_cibles` de cette
    sous-tâche précise et transmets uniquement cet objet plat, jamais l'objet indexé complet — si
    une sous-tâche touche plusieurs sous-projets, transmets celui majoritaire et signale les
-   autres fichiers dans `contexte_researcher`. `contexte_dependance` — **présent uniquement si
+   autres fichiers dans `contexte_planner`. `contexte_dependance` — **présent uniquement si
    `depends_on` est non vide** : c'est le
    `resume` complet (objet structuré, pas de fichier de contrat intermédiaire sur disque) de la
    sous-tâche productrice correspondante. N'envoie pas cette clé du tout quand elle ne

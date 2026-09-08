@@ -23,8 +23,10 @@ plugins](https://code.claude.com/docs/en/plugins-reference#plugin-directory-stru
   (`generate-openapi`, `generate-readme`, `generate-changelog`).
 - `skills/audit/` — détection + correction de non-conformités (`rgaa-check`,
   `security-audit`).
-- `skills/git/` — livraison du travail (`create-pr`) : commits conventionnels, push de la
-  branche courante, rédaction du titre et du corps de PR. Seule famille de skills qui écrit
+- `skills/git/` — livraison du travail (`create-pr`) : mise à jour de `README.md` et
+  `CHANGELOG.md` déduite du diff réel (selon les conventions de `skills/documentation/`, avec
+  les plans de `.sohub-claude-plugin/plans/` comme matière de formulation), commits
+  conventionnels, push de la branche courante, rédaction du titre et du corps de PR. Seule famille de skills qui écrit
   dans l'historique Git, donc la seule soumise au garde-fou `git` (elle s'arrête si le hook
   refuse, ne le contourne jamais). L'ouverture de la PR reste un geste de l'utilisateur : pas
   d'appel `gh`/`glab`, une publication sous l'identité de quelqu'un n'est pas automatisable
@@ -125,7 +127,7 @@ quoi le même fichier se retrouve cible de deux sous-tâches et bloque leur para
 
 **Pourquoi une commande et pas un agent « chef de produit »** : un sous-agent est isolé, son
 seul canal de retour est son rapport final — il ne peut pas poser de question à l'utilisateur.
-Le plugin encode déjà cette contrainte (`researcher` renvoie `ambiguites`, c'est `/ticket` qui
+Le plugin encode déjà cette contrainte (`planner` renvoie `ambiguites`, c'est `/ticket` qui
 les pose). Une qualification qui challenge réellement est adaptative : la question suivante
 dépend de la réponse précédente. Elle ne peut vivre que dans la boucle principale.
 
@@ -219,9 +221,9 @@ ces hooks, qui restent la première ligne de défense mais pas une garantie abso
 
 ## Dépendance MCP
 
-`agents/researcher.md` s'appuie sur le MCP `code-review-graph`, déclaré dans `.mcp.json` de ce
+`agents/planner.md` s'appuie sur le MCP `code-review-graph`, déclaré dans `.mcp.json` de ce
 plugin (`uvx code-review-graph serve`) — nécessite `uv`/`uvx` installé sur la machine. En son
-absence ou en cas d'échec de connexion, `researcher` dégrade explicitement vers un fallback
+absence ou en cas d'échec de connexion, `planner` dégrade explicitement vers un fallback
 grep/glob (cf. sa fiche), le flux `/ticket` reste utilisable sans ce MCP, avec une recherche
 de cible technique moins précise.
 
@@ -251,7 +253,7 @@ de cible technique moins précise.
   porte sa **conduite à tenir** — sans quoi elle reste un trou que le premier agent bouchera
   seul.
 - **Contrats petits et filtrés** : un sous-agent ne reçoit jamais un digest complet quand un
-  sous-ensemble filtré suffit. Le filtrage doit rester **mécanique** — `researcher` rattache
+  sous-ensemble filtré suffit. Le filtrage doit rester **mécanique** — `planner` rattache
   chaque note aux fichiers qu'elle concerne, `/ticket` intersecte avec les `fichiers_cibles` et
   transmet tel quel, sans reformuler (une paraphrase intermédiaire perd des contraintes et en
   invente).
