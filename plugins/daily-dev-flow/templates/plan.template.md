@@ -42,3 +42,10 @@ Créé le: <AAAA-MM-JJ>
 
 <Rempli pendant l'exécution : une sous-section `### <id> — <titre>` par sous-tâche terminée,
 portant son `resume` complet.>
+
+## Signaux retex
+
+<Rempli pendant l'exécution, seulement quand quelque chose accroche : une ligne datée par
+signal — découpage modifié à la gate, sous-tâche `failed`, tentative de la boucle de build,
+critère non rempli, consigne corrective de l'utilisateur. Reste vide sur un ticket sans
+accroc.>

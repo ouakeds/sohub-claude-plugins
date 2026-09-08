@@ -7,7 +7,7 @@
     {
       "name": "daily-dev-flow",
       "source": "./plugins/daily-dev-flow",
-      "description": "Flux ticket → analyse → développement → vérification de build, générique multi-stack, orchestré par /ticket."
+      "description": "Flux ticket → analyse → développement → vérification de build → retex, générique multi-stack, orchestré par /ticket."
     }
   ]
 }
