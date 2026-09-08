@@ -53,10 +53,13 @@ travaille peut-être en parallèle sur une sous-tâche voisine, parfois celle do
 - Tu peux lancer des vérifications ponctuelles (build partiel, un test déjà existant et ciblé)
   pour valider ton propre travail, mais le build final ne t'appartient pas — c'est le rôle de la
   vérification de build orchestrée par `/ticket`. Ne le lance pas toi-même.
-- N'écris jamais de test (unitaire, intégration...) toi-même, que ce soit pour la sous-tâche ou
-  en complément — hors scope v1 du plugin, ça alourdit le temps de dev sans valeur ajoutée
-  demandée. Tu peux exécuter des tests déjà présents dans le projet pour valider ton travail,
-  mais n'en crée aucun.
+- **Chaque critère de `criteres_validation` se traduit en un test**, écrit avec le harness du
+  projet (`contexte_stack.outil_test`) et les conventions de test déjà en place s'il en existe.
+  Le test traduit le critère tel quel — le geste et son résultat constatable — sans l'affaiblir
+  ni l'étendre. Si `outil_test` est `null`, ne mets pas en place un harness de ta propre
+  initiative : signale-le dans `resume` et livre sans test. N'écris **aucun test au-delà des
+  critères reçus** : le périmètre de test est le périmètre de validation, pas une couverture
+  générale.
 
 ## Cas particulier : premier ticket d'un projet neuf
 
@@ -76,7 +79,8 @@ et seulement dans celui-là, les règles ci-dessus se lisent autrement :
   sur le même contrat — s'il te paraît faux ou incomplet, c'est un blocage à remonter, pas une
   divergence à créer ;
 - tu ajoutes et installes les dépendances qui manquent avec le `gestionnaire_paquets` de
-  `contexte_stack`, pour que l'`outil_build` passe à la fin de ta sous-tâche ;
+  `contexte_stack`, pour que l'`outil_build` et l'`outil_test` passent à la fin de ta
+  sous-tâche ;
 - tu t'en tiens à ta sous-tâche : pas de fonctionnalité prise d'avance sur les vagues
   suivantes, même si elle te semble triviale à glisser maintenant.
 
@@ -96,8 +100,9 @@ sous-tâche mal cadrée vaut mieux signalée que devinée.
   "titre": "string",
   "description": "string",
   "fichiers_cibles": ["..."],
+  "criteres_validation": ["critère observable recopié du plan, jamais reformulé — chacun se traduit en un test"],
   "contexte_planner": "optionnel — notes/symboles pertinents extraits par planner, filtrés sur ces fichiers_cibles ; absent sur un projet en amorçage, où il n'y a rien à extraire",
-  "contexte_stack": { "langage": "...", "framework": "...", "outil_build": "...", "gestionnaire_paquets": "...", "fichier_manifeste": "..." },
+  "contexte_stack": { "langage": "...", "framework": "...", "outil_build": "...", "outil_test": "...", "gestionnaire_paquets": "...", "fichier_manifeste": "..." },
   "contexte_dependance": "optionnel — resume complet de la sous-tâche backend dont dépend celle-ci"
 }
 ```

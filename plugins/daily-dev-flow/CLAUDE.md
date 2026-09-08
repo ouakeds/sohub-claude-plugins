@@ -247,6 +247,12 @@ de cible technique moins précise.
   résultat constatable. Le skill les rédige à partir de l'usage décrit puis les fait valider en
   bloc, ce qui les rend *déclarés* au sens de la règle de sourçage. Sans eux, aucune sous-tâche
   de `/ticket` ne sait à quoi ressemble « fini ».
+- **Les critères traversent le flux de bout en bout** : recopiés du lot (ou rédigés à la gate
+  d'un ticket ad hoc), ils descendent dans le payload de chaque sous-tâche
+  (`criteres_validation`), chaque critère est traduit en un test par l'agent dev
+  (`contexte_stack.outil_test`), `build-check` lance build **et** tests, et l'étape 6 rend un
+  constat par critère — `constaté par test` ou `à constater par l'utilisateur`. L'orchestrateur
+  ne déclare jamais un critère rempli lui-même.
 - **Zéro hypothèse structurante** : une hypothèse dont dépend un choix d'implémentation (seuil,
   transport, format d'échange, cible externe, comportement d'erreur) est vérifiée ou posée en
   question. Ne restent marquées `> Hypothèse` que les faits externes non vérifiables, et chacune
@@ -321,6 +327,8 @@ en revue. Un `CLAUDE.md` existant n'est jamais écrasé, et `docs/decisions.md` 
 ## Hors scope v1
 
 - Intégration Jira/Linear/GitHub Issues (ticket collé manuellement).
-- Tests automatisés.
+- Couverture de test générale : les seuls tests que le flux écrit sont la traduction des
+  critères de validation portés par les sous-tâches (un critère = un test), jamais une passe
+  de couverture au-delà.
 - Code review approfondie packagée dans le plugin (le skill `/code-review` global de
   l'utilisateur est suggéré en fin de flux, jamais dupliqué en interne).

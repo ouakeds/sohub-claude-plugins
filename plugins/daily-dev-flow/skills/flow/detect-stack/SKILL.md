@@ -23,6 +23,7 @@ Objet plat :
   "langage": "typescript",
   "framework": "nextjs",
   "outil_build": "tsc --noEmit && next build",
+  "outil_test": "vitest run",
   "gestionnaire_paquets": "pnpm",
   "fichier_manifeste": "package.json"
 }
@@ -32,6 +33,11 @@ Objet plat :
 - `framework` : `null` si aucun framework identifiable.
 - `outil_build` : la commande shell exacte à lancer pour valider une compilation/build — c'est
   ce que `build-check` exécute tel quel.
+- `outil_test` : la commande shell exacte qui lance les tests du projet — script `test` du
+  manifeste, tâche de build (`mvn test`, `go test ./...`), ou config de framework de test
+  constatée. `null` si aucun harness détecté — ne jamais inventer une commande plausible :
+  `build-check` l'exécute telle quelle, et les agents dev en dépendent pour traduire les
+  critères de validation en tests.
 - `gestionnaire_paquets` : `null` si non applicable (ex. Go).
 - `fichier_manifeste` : chemin relatif ayant servi à la détection.
 
@@ -57,8 +63,8 @@ Objet plat :
    objet unique :
    ```json
    {
-     "backend/": { "langage": "go", "framework": null, "outil_build": "go build ./...", "gestionnaire_paquets": null, "fichier_manifeste": "backend/go.mod" },
-     "frontend/": { "langage": "typescript", "framework": "react", "outil_build": "npm run build", "gestionnaire_paquets": "npm", "fichier_manifeste": "frontend/package.json" }
+     "backend/": { "langage": "go", "framework": null, "outil_build": "go build ./...", "outil_test": "go test ./...", "gestionnaire_paquets": null, "fichier_manifeste": "backend/go.mod" },
+     "frontend/": { "langage": "typescript", "framework": "react", "outil_build": "npm run build", "outil_test": "npm test", "gestionnaire_paquets": "npm", "fichier_manifeste": "frontend/package.json" }
    }
    ```
    Dans ce cas, `/ticket` choisit la clé pertinente par sous-tâche selon `fichiers_cibles`.

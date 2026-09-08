@@ -14,7 +14,7 @@ Créé le: <AAAA-MM-JJ>
 
 | Item | Validé par |
 |------|------------|
-| <D1 — libellé de l'item> | <critère recopié mot pour mot de docs/cadrage.md> |
+| <D1 — libellé de l'item, ou `hors backlog`> | <critère — recopié mot pour mot de docs/cadrage.md ; pour un lot `hors backlog`, rédigé au lancement et validé à la gate> |
 
 ## Fichiers prévus
 
@@ -32,7 +32,8 @@ Créé le: <AAAA-MM-JJ>
 
 ## Découpage
 
-<Rempli au lancement du lot : id, titre, type, fichiers_cibles, depends_on, statut.>
+<Rempli au lancement du lot : id, titre, type, fichiers_cibles, criteres_validation,
+depends_on, statut.>
 
 ## Vagues d'exécution
 

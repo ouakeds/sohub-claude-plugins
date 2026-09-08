@@ -8,6 +8,27 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Les critères de validation traversent désormais le flux de bout en bout, et chaque critère
+  devient un test.** Jusqu'ici les critères — pièce maîtresse du cadrage — mouraient dans le
+  fichier de plan : jamais transmis aux agents, jamais vérifiés (« fini » se réduisait à « ça
+  compile »). Désormais : chaque sous-tâche reçoit ses critères dans son payload
+  (`criteres_validation`, recopiés mot pour mot), l'agent dev traduit chaque critère en un test
+  avec le harness du projet (`contexte_stack.outil_test`, détecté par `detect-stack`, tranché
+  au cadrage par la nouvelle brique « outil de test » de `/new-project`), `build-check` lance
+  build **et** tests, et la synthèse de `/ticket` rend un constat par critère — `constaté par
+  test` (fichier de test cité) ou `à constater par l'utilisateur` (geste + résultat attendu).
+  Aucun test au-delà des critères : le périmètre de test est le périmètre de validation. Lève
+  l'interdit « pas de tests en v1 » (évolution consignée dans `PLAN.md`).
+- **Un ticket ad hoc porte désormais des critères de validation.** Un ticket libre n'en héritait
+  d'aucun cadrage ; l'orchestrateur les rédige depuis le texte du ticket (un critère observable
+  par sous-tâche, aucun chiffre inventé), les fait valider à la gate — ce qui les rend
+  *déclarés* — et les consigne dans le plan (`rédigé au lancement`) ; en `--auto`, ils restent
+  dans le plan comme arbitrages visibles, à la manière de ce que `/new-project --auto` consigne
+  dans `docs/decisions.md`.
+- **Un ticket ad hoc est confronté au `Hors scope` du cadrage** : si la demande recoupe un item
+  hors scope de `docs/cadrage.md`, `/ticket` le signale avant d'avancer — un choix déclaré au
+  cadrage ne s'annule pas silencieusement par un ticket.
+
 - **`create-pr` embarque la documentation dans la PR.** Nouvelle étape 3 « Documentation
   embarquée » : avant les commits, la skill déduit du diff réel les mises à jour de
   `CHANGELOG.md` (entrées sous `Unreleased`, convention `generate-changelog`, mapping type de

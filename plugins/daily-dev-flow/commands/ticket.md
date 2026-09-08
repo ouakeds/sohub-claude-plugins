@@ -60,9 +60,13 @@ a donc pas de besoin à extraire ni de digest à reconstituer : tu tiens l'entr�
   son digest **complète** les `Fichiers prévus` du lot, il ne les remplace pas. En mode
   greenfield, ne le lance pas — il n'y a rien à trouver de plus que ce que le lot porte déjà.
 
-**Un texte libre — mode ticket ad hoc**, le comportement historique. Une exception :
+**Un texte libre — mode ticket ad hoc**, le comportement historique. Deux garde-fous :
 si `.sohub-claude-plugin/plans/` contient un lot `todo` qui couvre visiblement la demande,
-propose ce numéro plutôt que d'ouvrir un doublon qui divergera du backlog.
+propose ce numéro plutôt que d'ouvrir un doublon qui divergera du backlog. Et si
+`docs/cadrage.md` existe et que la demande recoupe un item de son `Hors scope`, dis-le avant
+d'avancer : un choix déclaré au cadrage ne s'annule pas silencieusement par un ticket — c'est
+à l'utilisateur de confirmer qu'il rouvre ce périmètre (et de mettre à jour le cadrage s'il le
+fait).
 
 ### Qualification du projet
 
@@ -89,7 +93,8 @@ avant elle, ou d'un projet cadré par une version antérieure du plugin :
 
 1. La stack est déjà écrite : lis-la dans `CLAUDE.md` (section `Stack` + `Commandes`) et
    reconstitue le `contexte_stack` plat attendu par la suite du flux — `outil_build` est la
-   commande de build qui y figure, `fichier_manifeste` celui qui **sera créé**. N'appelle pas
+   commande de build qui y figure, `outil_test` la commande de test (ou `null` si le cadrage
+   n'en fixe pas), `fichier_manifeste` celui qui **sera créé**. N'appelle pas
    `detect-stack` pour la retrouver, il n'a rien à lire.
 2. Le digest se réduit au besoin du ticket et aux contraintes qui le concernent :
    `fichiers_cibles = []`, `symboles = []`, tout est à créer. Sur ce premier ticket, `docs/`
@@ -143,9 +148,16 @@ avant elle, ou d'un projet cadré par une version antérieure du plugin :
 greenfield), produis une liste de sous-tâches :
 
 ```
-{id, titre, type: backend|frontend|mixte, description, fichiers_cibles: [...], depends_on: [id, ...]}
+{id, titre, type: backend|frontend|mixte, description, fichiers_cibles: [...], criteres_validation: [...], depends_on: [id, ...]}
 ```
 
+- `criteres_validation` : le ou les critères de validation de l'item du périmètre que la
+  sous-tâche sert. **En mode lot planifié**, recopiés mot pour mot depuis la section
+  `## Critères de validation` du lot — jamais reformulés, même régime que les contrats. **En
+  mode ticket ad hoc**, le ticket n'en porte pas : rédige-les toi-même depuis son texte — un
+  critère observable par sous-tâche, un geste et son résultat constatable, aucun chiffre
+  inventé — ils seront validés à la gate de l'étape 3, ce qui les rend déclarés. Une
+  sous-tâche sans critère est une sous-tâche dont personne ne saura dire qu'elle est finie.
 - `depends_on` vient des dépendances explicites relevées par `planner` (ex. un endpoint
   qu'un composant frontend doit consommer) et des recoupements évidents (deux sous-tâches
   touchant le même fichier/module → dépendance, jamais parallélisme). Un même fichier dans les
@@ -186,11 +198,17 @@ greenfield), produis une liste de sous-tâches :
    `NNNN-<slug>.md` comptent, `BACKLOG.md` n'est pas un plan. `<slug>` = kebab-case du besoin
    fonctionnel, tronqué à ~40 caractères. Écris-le depuis
    `${CLAUDE_PLUGIN_ROOT}/templates/plan.template.md`, avec `Couvre: hors backlog`, les sections
-   ci-dessus remplies et `Statut global: todo`.
+   ci-dessus remplies et `Statut global: todo`. Sa section `## Critères de validation` porte
+   les critères que tu as rédigés à l'étape 2 (source : `rédigé au lancement`, pas
+   `docs/cadrage.md`) ; en `--auto`, la gate ne les validera pas — ils restent dans le plan
+   comme arbitrages visibles et contestables, à la manière de ce que `/new-project --auto`
+   consigne dans `docs/decisions.md`.
 4. **Gate** (sautée si `--auto` a été passé) : affiche un résumé bref du plan (besoin +
-   découpage + vagues) en texte, puis pose via `AskUserQuestion` : "Lancer l'implémentation de
-   ce plan ?" avec les options `Oui, lancer` / `Modifier le découpage` / `Annuler`. N'avance à
-   l'étape 4 que sur `Oui, lancer`.
+   découpage + vagues + **critères de validation** — en mode ad hoc, c'est cette validation
+   qui fait passer les critères que tu as rédigés de déduits à déclarés) en texte, puis pose
+   via `AskUserQuestion` : "Lancer l'implémentation de ce plan ?" avec les options
+   `Oui, lancer` / `Modifier le découpage` / `Annuler`. N'avance à l'étape 4 que sur
+   `Oui, lancer`.
 5. **Sur `Oui, lancer` seulement** : passe l'en-tête à `Statut global: in_progress`, puis
    rafraîchis la vue en invoquant `generate-backlog`. Un lot annulé à la gate **reste `todo`** —
    sinon le backlog afficherait en cours un travail que personne n'a lancé, et l'étape 0
@@ -209,7 +227,8 @@ Pour chaque vague, dans l'ordre :
    sous-tâches de la vague — typiquement `backend-dev` et `frontend-dev` sur des sous-tâches
    disjointes. Jamais de parallélisation sur deux sous-tâches qui touchent le même fichier.
 2. Construis le payload de chaque sous-tâche : `id, titre, description, fichiers_cibles,
-   contexte_planner` (filtré, cf. étape 2), `contexte_stack` — objet plat identique pour
+   criteres_validation` (cf. étape 2 — recopiés tels quels, l'agent les traduit en tests),
+   `contexte_planner` (filtré, cf. étape 2), `contexte_stack` — objet plat identique pour
    toutes en cas de stack unique ; **en cas de résultat indexé par sous-projet (monorepo)**,
    sélectionne la clé dont le préfixe de répertoire correspond aux `fichiers_cibles` de cette
    sous-tâche précise et transmets uniquement cet objet plat, jamais l'objet indexé complet — si
@@ -265,8 +284,18 @@ qui a été implémenté (à partir des `resume` cumulés), le statut du build, 
 ligne le skill `/code-review` global sur les fichiers modifiés (liste agrégée des
 `resume.fichiers_modifies`) — sans le lancer automatiquement.
 
-Rappelle les **critères de validation** que le lot portait : ce sont eux qui disent si le
-travail est fini, et c'est à l'utilisateur de les constater, pas à toi de les déclarer remplis.
+Rends ensuite le **constat des critères de validation**, en tableau — une ligne par critère,
+deux issues possibles :
+
+- `constaté par test` : le test qui traduit ce critère existe (cf. `resume` de la sous-tâche)
+  et vient de passer dans `build-check` — cite le fichier de test ;
+- `à constater par l'utilisateur` : le critère n'a pas de traduction en test (geste d'interface,
+  `outil_test` absent, critère non automatisable) — redonne alors le geste et le résultat
+  attendu, tels que le critère les écrit.
+
+Un critère sans test **et** sans constat possible est un signal retex (« critère non
+rempli ») : consigne-le dans `## Signaux retex` du plan. Tu ne déclares jamais un critère
+rempli toi-même — un test vert constate, le reste appartient à l'utilisateur.
 
 Puis invoque `generate-backlog` en mode rafraîchissement pour que `BACKLOG.md` reflète le
 nouveau statut, et termine par les **lots prêts à partir** — les `todo` dont toutes les

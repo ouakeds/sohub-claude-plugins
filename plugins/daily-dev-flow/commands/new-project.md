@@ -190,6 +190,9 @@ Chaque brique fait l'objet d'un choix explicite, groupées en un ou deux tours d
   visualisation — une question à part entière, jamais un détail déduit du framework ;
 - **gestion d'état ou équivalent**, seulement si le choix engage la structure du code ;
 - **gestionnaire de paquets** ;
+- **outil de test** : le harness qui portera les tests des critères de validation (chaque
+  critère du cadrage sera traduit en test par `/ticket`) — une brique comme les autres,
+  proposée et tranchée, jamais déduite du framework ;
 - **distribution et lancement** : usage local, packaging, cibles, commande de démarrage.
 
 Trois règles pour que ces questions soient utiles :
@@ -382,7 +385,9 @@ Tu l'exécutes toi-même, en ligne, sans agent.
   un contrat posé sur disque est un contrat que deux agents lancés en parallèle ne peuvent plus
   inventer chacun de leur côté, donc une dépendance de moins entre les sous-tâches du premier
   ticket ;
-- la **configuration de build et d'outillage** — compilateur, bundler, style, ports, proxy —
+- la **configuration de build et d'outillage** — compilateur, bundler, style, ports, proxy,
+  et le **harness de test** tranché à l'étape 4 (config posée, commande de test dans les
+  scripts du manifeste — les tests eux-mêmes viendront avec les sous-tâches de `/ticket`) —
   telle que le cadrage la fixe ;
 - le **point d'entrée** de chaque exécutable, réduit à ce qui le fait démarrer ;
 - le `.gitignore` : au minimum les artefacts de build, les dépendances installées et

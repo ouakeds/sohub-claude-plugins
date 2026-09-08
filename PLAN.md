@@ -10,7 +10,10 @@ Plugin Claude Code autonome (roster d'agents propre, générique multi-stack) qu
 - **Source ticket** : texte collé manuellement (pas d'intégration Jira/Linear en v1).
 - **Portée** : générique multi-stack — détection automatique de la stack cible, pas de hardcode projet.
 - **Roster d'agents** : autonome, packagé dans le plugin (n'utilise pas le Jarvis du CLAUDE.md global).
-- **Vérification finale** : compilation/build uniquement (pas de lint, pas de tests en v1).
+- **Vérification finale** : compilation/build + tests des critères de validation — chaque
+  critère du plan est traduit en test par l'agent dev, et `build-check` lance build **et**
+  tests (évolution du 2026-09-08 ; le cadrage initial se limitait au build, ce qui laissait
+  « fini = ça compile »). Pas de lint en v1.
 - **Retries de correction build** : 3 tentatives max avant remontée à l'utilisateur.
 - **Ticket ambigu (cible technique non identifiable)** : **tranché** — le `planner`/la commande `/ticket`
   bloque et pose des questions précises à l'utilisateur avant de continuer (pas d'hypothèse silencieuse).
@@ -92,7 +95,8 @@ outillage ni bruit à contenir.
    rôle est d'isoler ce bruit et de renvoyer un résumé des erreurs — pas de duplication de la logique
    de détection de stack (déjà dans la skill).
 6. **Synthèse finale**
-   Ce qui a été implémenté / statut du build / suite recommandée (tests, review — hors scope v1).
+   Ce qui a été implémenté / statut du build et des tests / constat des critères de
+   validation / suite recommandée (review — hors scope v1).
 
 ## Architecture cible
 
@@ -157,8 +161,10 @@ adaptés pour écrire leur sortie versionnée dans `.sohub-claude-plugin/`.
 ## Hors scope v1
 
 - Intégration Jira / Linear / GitHub Issues (texte collé manuellement pour l'instant).
-- Tests automatisés.
 - Code review approfondie.
+- Couverture de test générale (les tests écrits par le flux se limitent à la traduction des
+  critères de validation — évolution du 2026-09-08, initialement « tests automatisés » tout
+  entiers hors scope).
 
 → candidats pour une v2 si le besoin se confirme à l'usage.
 
