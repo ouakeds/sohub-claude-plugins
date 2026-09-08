@@ -6,6 +6,8 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-08
+
 ### Added
 
 - **Les critères de validation traversent désormais le flux de bout en bout, et chaque critère
@@ -421,6 +423,7 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 - Skills `detect-stack`, `build-check`, `openapi-doc`, `rgaa-check`, `security-audit`.
 - Intégration MCP `code-review-graph` pour l'agent `researcher`, avec fallback grep/glob.
 
-[Unreleased]: https://github.com/ouakeds/sohub-claude-plugins/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ouakeds/sohub-claude-plugins/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ouakeds/sohub-claude-plugins/compare/v0.2.1...v0.5.0
 [0.2.0]: https://github.com/ouakeds/sohub-claude-plugins/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ouakeds/sohub-claude-plugins/releases/tag/v0.1.0
