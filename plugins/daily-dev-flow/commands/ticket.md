@@ -26,9 +26,13 @@ facturé pour zéro travail.
 
 Cherche dans `.sohub-claude-plugin/plans/` un plan `Statut global: in_progress` — **et rien
 d'autre** : un plan `todo` est un lot jamais lancé, pas une exécution interrompue. S'il en
-existe un, propose à l'utilisateur de le reprendre ou de l'abandonner pour démarrer autre
-chose. Si reprise : lis `${CLAUDE_PLUGIN_ROOT}/docs/flows/reprise.md` et suis-le. Si abandon :
-continue depuis l'étape 1, sans toucher au plan existant.
+existe un et que `$ARGUMENTS` désigne **ce même lot** (ou un texte qui le recouvre), propose à
+l'utilisateur de le reprendre ou de l'abandonner pour démarrer autre chose. Si reprise : lis
+`${CLAUDE_PLUGIN_ROOT}/docs/flows/reprise.md` et suis-le. Si abandon : continue depuis
+l'étape 1, sans toucher au plan existant. Mais si `$ARGUMENTS` désigne **un autre lot**, ce
+plan `in_progress` n'est pas à toi : il tourne peut-être dans une autre session — signale-le
+en une ligne (« 0002 semble en cours, autre session ? ») et continue vers l'étape 1 sans
+proposer ni reprise ni abandon.
 
 ## Étape 1 — résoudre l'entrée, puis qualifier le projet cible
 
@@ -39,8 +43,10 @@ continue depuis l'étape 1, sans toucher au plan existant.
 concernés` **font autorité et ne se reformulent pas**. Tu tiens l'entrée de l'étape 2.
 
 - **Gate de dépendance** : si un lot cité en `Dépend de:` n'est pas `Statut global: done`,
-  arrête-toi et dis lequel lancer d'abord — passer outre, c'est faire écrire à un agent la
-  moitié d'un fichier que le lot précédent réécrira. Si l'utilisateur force malgré ton arrêt,
+  arrête-toi — passer outre, c'est faire écrire à un agent la moitié d'un fichier que le lot
+  précédent réécrira. Le message distingue l'état réel : un lot `todo` est **à lancer
+  d'abord** (donne sa commande) ; un lot `in_progress` est **déjà lancé**, peut-être dans une
+  autre session — il s'attend, il ne se relance pas. Si l'utilisateur force malgré ton arrêt,
   applique sa décision mais consigne l'override dans `## Signaux retex` du plan lancé (ligne
   datée : dépendance non `done`, lancement forcé).
 - Un lot déjà `done` ne se relance pas : signale-le.
@@ -122,9 +128,12 @@ Ni `planner` ni `detect-stack` ne sont lancés. Deux cas :
 - Regroupe en **vagues d'exécution** : vague 1 = sans `depends_on`, vague 2 = dépendances
   toutes en vague 1, etc.
 - Prépare le `contexte_planner` filtré de chaque sous-tâche : le `besoin_fonctionnel` global,
-  plus les entrées de `notes` dont le champ `fichiers` recoupe ses `fichiers_cibles`, plus les
-  `symboles` qui y apparaissent. Filtrage **mécanique** — une intersection, pas une
-  reformulation : transmets une note telle quelle ou pas du tout, jamais le digest complet.
+  plus les entrées de `notes` et de `symboles` dont le champ `fichiers` recoupe ses
+  `fichiers_cibles`. Filtrage **mécanique** — une intersection, pas une reformulation :
+  transmets une entrée telle quelle ou pas du tout, jamais le digest complet. **Une note qui
+  ne recoupe aucune sous-tâche ne se perd pas en silence** : c'est soit un signe que le
+  découpage a oublié un fichier, soit une information à remonter à l'utilisateur dans le
+  résumé de gate — jamais un drop muet.
 - **Règles actives du retex** : si `.sohub-claude-plugin/retex.md` existe, lis sa section
   `## Règles actives` — jamais `retex-historique.md`, réservé à l'étape 7 — et applique-les au
   découpage. Une règle qui recoupe une sous-tâche descend dans son payload (clé
@@ -143,7 +152,9 @@ Ni `planner` ni `detect-stack` ne sont lancés. Deux cas :
    `Statut global` reste `todo` jusqu'à la gate.
 3. **Mode ticket ad hoc : tu écris un nouveau plan** depuis
    `${CLAUDE_PLUGIN_ROOT}/templates/plan.template.md`. `NNNN` = plus haut numéro existant + 1,
-   zero-paddé sur 4 chiffres (seuls les `NNNN-<slug>.md` comptent) ; `<slug>` = kebab-case du
+   zero-paddé sur 4 chiffres (seuls les `NNNN-<slug>.md` comptent) — **re-scanne `plans/`
+   juste avant d'écrire** : une autre session a pu créer un plan entre-temps, et une collision
+   de numéro casse la numérotation pour toujours. `<slug>` = kebab-case du
    besoin, ~40 caractères. `Couvre: hors backlog`, `Statut global: todo`, sections ci-dessus
    remplies. Sa section `## Critères de validation` porte les critères rédigés à l'étape 2
    (source : `rédigé au lancement`) ; en `--auto`, la gate ne les validera pas — ils restent
@@ -164,8 +175,12 @@ Ni `planner` ni `detect-stack` ne sont lancés. Deux cas :
 
 Pour chaque vague, dans l'ordre :
 
-1. Lance en **parallèle** (plusieurs appels d'agent dans le même message) toutes les
-   sous-tâches de la vague. Jamais deux sous-tâches qui touchent le même fichier.
+1. **Avant de lancer la vague, écris `in_progress`** sur la vague et sur chaque sous-tâche
+   lancée, dans le fichier de plan — c'est ce qui permet à une reprise (étape 0) de distinguer
+   « jamais lancée » d'« interrompue en plein travail », donc de savoir quels fichiers sur le
+   disque sont suspects. Puis lance en **parallèle** (plusieurs appels d'agent dans le même
+   message) toutes les sous-tâches de la vague. Jamais deux sous-tâches qui touchent le même
+   fichier.
 2. Payload de chaque sous-tâche : `id, titre, description, fichiers_cibles,
    criteres_validation` (recopiés tels quels — l'agent les traduit en tests),
    `contexte_planner` (filtré, cf. étape 2), `regles_retex` (si des règles recoupent la
@@ -254,7 +269,11 @@ Le retex vit dans deux fichiers : `.sohub-claude-plugin/retex.md` — court, rel
 découpage (règles actives + enseignements plugin) — et
 `.sohub-claude-plugin/retex-historique.md`, lu et écrit seulement ici. Crée chacun depuis son
 gabarit (`${CLAUDE_PLUGIN_ROOT}/templates/retex.template.md` / `retex-historique.template.md`)
-s'il n'existe pas. **Migration** : si `retex.md` porte encore une section `## Historique`
+s'il n'existe pas. Ces fichiers sont cumulatifs et non régénérables : la « course sans
+gravité » qui protège `BACKLOG.md` (simple rendu) **ne s'applique pas ici** — deux sessions
+parallèles peuvent y écrire en même temps et s'effacer mutuellement des règles. **Re-lis donc
+chaque fichier juste avant de l'éditer** et fusionne avec ce qui a pu apparaître depuis ta
+première lecture, au lieu d'écraser. **Migration** : si `retex.md` porte encore une section `## Historique`
 (format antérieur), déplace-la une fois vers `retex-historique.md` avant toute autre écriture.
 
 1. Relis les signaux du ticket et déduis-en des **suggestions actionnables**, typées : `règle

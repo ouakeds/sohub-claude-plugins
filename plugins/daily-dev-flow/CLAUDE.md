@@ -14,8 +14,10 @@ dans un dépôt qui héberge potentiellement plusieurs plugins (cf. `.claude-plu
 cumulative dans `.claude-plugin/plugin.json`, champ `skills` — cf. [doc officielle des
 plugins](https://code.claude.com/docs/en/plugins-reference#plugin-directory-structure)) :
 
-- `skills/flow/` — outillage du flux, consommé par les deux commandes : `detect-stack` et
-  `build-check` (internes à `commands/ticket.md`, jamais invoquées par l'utilisateur),
+- `skills/flow/` — outillage du flux, consommé par les deux commandes : `detect-stack`,
+  `build-check` et `bootstrap-project` (internes, jamais invoquées par l'utilisateur —
+  `bootstrap-project` porte l'amorçage à un seul endroit pour `/new-project` étape 11 et le
+  chemin « cadré non amorcé » de `/ticket`),
   `generate-backlog`, appelée par `/new-project` en fin de cadrage et par `/ticket` à chaque
   changement de statut — celle-là est `user-invocable`, parce que régénérer le backlog après une
   évolution du périmètre est un geste que l'utilisateur veut poser lui-même — et
@@ -85,6 +87,13 @@ gabarit — pas l'improviser dans un projet.
 qu'en TypeScript, en Java ou en Kotlin. `backend-dev` et `frontend-dev` les lisent en tête de
 sous-tâche, via `${CLAUDE_PLUGIN_ROOT}`.
 
+`conventions/agent-dev-protocole.md` est d'une autre nature : le **tronc commun des deux
+agents dev** — contrats d'entrée/sortie, cas particuliers (premier ticket, boucle de
+correction, reprise), règles de blocage. Les deux fiches d'agent le référencent et ne portent
+que leur spécificité de couche : un champ de payload ne se définit qu'à cet endroit, une clé
+décrite en deux endroits est une clé qui diverge — c'est le même argument que pour les
+conventions, appliqué au protocole.
+
 **Des fichiers lus, pas une skill** : les deux agents de développement n'ont pas l'outil `Skill`
 (même contrainte que pour `generate-readme`, cf. `commands/ticket.md`). Faire porter la
 convention par `/ticket`, qui la recopierait dans chaque payload, la ferait payer une fois par
@@ -129,12 +138,15 @@ de deviner. Conséquence voulue : le découpage, le plan, les vagues et la boucl
 n'existent qu'à un seul endroit (`commands/ticket.md`), jamais dupliqués dans un chemin
 d'amorçage parallèle.
 
-**L'amorçage n'est jamais une sous-tâche d'agent.** C'est la recopie de ce que `docs/` fixe
-déjà : le déléguer coûte un agent et une vague entière, sérialise le premier ticket derrière
-lui, et met le contrat partagé sous la plume d'un agent au lieu de le poser sur disque **avant**
-le découpage — or c'est précisément ce contrat sur disque qui permet à backend et frontend de
-partir ensemble en vague 1. Corollaire : rien de ce qui est amorcé n'est « provisoire », sans
-quoi le même fichier se retrouve cible de deux sous-tâches et bloque leur parallélisme.
+**L'amorçage n'est jamais une sous-tâche d'agent, et il n'existe qu'à un seul endroit** : la
+skill `bootstrap-project`, exécutée en ligne par la commande appelante (`/new-project`
+étape 11, ou le flux « cadré non amorcé » de `/ticket`). C'est la recopie de ce que `docs/`
+fixe déjà : le déléguer coûte un agent et une vague entière, sérialise le premier ticket
+derrière lui, et met le contrat partagé sous la plume d'un agent au lieu de le poser sur
+disque **avant** le découpage — or c'est précisément ce contrat sur disque qui permet à
+backend et frontend de partir ensemble en vague 1. Corollaire : rien de ce qui est amorcé
+n'est « provisoire », sans quoi le même fichier se retrouve cible de deux sous-tâches et
+bloque leur parallélisme.
 
 **Pourquoi une commande et pas un agent « chef de produit »** : un sous-agent est isolé, son
 seul canal de retour est son rapport final — il ne peut pas poser de question à l'utilisateur.
@@ -313,7 +325,10 @@ un sous-dossier par nature (`plans/`, `audit/`, `documentations/`), avec un num�
 `.sohub-claude-plugin/retex-historique.md` (journal des suggestions et de leurs statuts, lu à
 l'étape 7 seulement) sont des fichiers **uniques et cumulatifs**, édités en place par
 l'étape 7 de `/ticket` — un retex versionné par ticket perdrait sa raison d'être, qui est de
-porter les règles actives relues au découpage de chaque ticket suivant.
+porter les règles actives relues au découpage de chaque ticket suivant. Étant cumulatifs et
+non régénérables, ces deux fichiers ne bénéficient **pas** de l'argument « course sans
+gravité » qui protège `BACKLOG.md` (simple rendu) : l'étape 7 les re-lit juste avant chaque
+écriture et fusionne, au lieu d'écraser ce qu'une session parallèle a pu y déposer.
 `.sohub-claude-plugin/` est gitignoré automatiquement à la première exécution (ajout d'une
 ligne au `.gitignore` du projet cible si elle n'y est pas déjà).
 

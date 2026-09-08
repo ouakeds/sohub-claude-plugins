@@ -23,7 +23,12 @@ dans ce cas ; si ça arrive, sors en un tour plutôt que d'explorer le vide.
 
 ## Stratégie de recherche
 
-1. Interroge en priorité le MCP `code-review-graph` (recherche sémantique, overview
+0. **Cible textuelle → grep d'abord.** Si le ticket cite un texte affiché, un nom de fichier,
+   une route ou un symbole localisable tel quel, commence par `Grep`/`Glob` : la recherche
+   sémantique sert les besoins diffus, pas la localisation d'une chaîne — et ne lance jamais
+   `build_or_update_graph_tool` (construction potentiellement lourde du graphe) pour une
+   cible qu'un grep trouve en un appel.
+1. Sinon, interroge en priorité le MCP `code-review-graph` (recherche sémantique, overview
    d'architecture, contexte minimal) sur le besoin décrit dans le ticket — il te donne un
    contexte pertinent bien plus vite qu'un grep aveugle qui noierait le résultat dans du bruit.
    Si `semantic_search_nodes_tool` échoue faute de graphe déjà construit pour ce repo, appelle
@@ -60,7 +65,9 @@ re-payer toute l'exploration.
 {
   "besoin_fonctionnel": "string — reformulation claire et concise du besoin",
   "fichiers_cibles": ["chemin/relatif/fichier.ext", "..."],
-  "symboles": ["NomDeFonction", "NomDeComposant", "..."],
+  "symboles": [
+    { "nom": "NomDeFonction", "fichiers": ["chemin/relatif/fichier.ext"] }
+  ],
   "notes": [
     { "fichiers": ["chemin/relatif/fichier.ext"], "note": "string — contrainte ou pattern existant à respecter" }
   ],
@@ -77,6 +84,10 @@ re-payer toute l'exploration.
   }
 }
 ```
+
+`symboles` : chaque symbole porte les fichiers où tu l'as constaté — même règle de routage que
+les notes : `/ticket` filtre par intersection avec les `fichiers_cibles` d'une sous-tâche, un
+symbole sans fichier est infiltrable donc inutilisable.
 
 `notes` : une liste, pas un paragraphe — chaque entrée porte les fichiers qu'elle concerne,
 pour que `/ticket` puisse la router vers la seule sous-tâche qui touche ces fichiers. Deux

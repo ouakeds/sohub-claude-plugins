@@ -14,3 +14,12 @@ l'utilisateur choisit de le reprendre.
    cours d'écriture), ne l'invente pas : signale-le et laisse la sous-tâche consommatrice
    partir sans `contexte_dependance` — son agent sait alors qu'il doit aller lire le code
    produit plutôt que supposer un contrat.
+4. **Méfie-toi du disque pour toute sous-tâche `in_progress`** (ou dont le statut est douteux
+   — plan écrit avant que le lancement ne marque `in_progress`) : ses fichiers cibles peuvent
+   porter le travail **partiel** de l'exécution interrompue, et un fichier partiel peut très
+   bien compiler. Rien n'a été committé (le garde-fou git l'interdit au flux), donc pas de
+   revert possible — mais `git status` et `git diff` (lecture seule, autorisée) donnent la
+   liste exacte des fichiers touchés non committés : relève-la. Ajoute au payload de chaque
+   sous-tâche relancée la clé `avertissement_reprise` (cf. protocole des agents) : l'agent
+   vérifie alors l'état réel de chaque fichier cible et le réécrit entièrement plutôt que
+   d'imiter un contenu tronqué ou de le croire terminé.

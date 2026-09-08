@@ -106,7 +106,10 @@ est sur le développement, la vérification de build reste le point de sérialis
 
 `NNNN` = plus haut numéro existant dans `.sohub-claude-plugin/plans/` + 1, zero-paddé sur 4
 chiffres. Seuls les fichiers de forme `NNNN-<slug>.md` comptent — `BACKLOG.md` n'est pas un
-plan. `<slug>` = kebab-case du titre du lot, tronqué à ~40 caractères.
+plan. `<slug>` = kebab-case du titre du lot, tronqué à ~40 caractères. **Re-scanne `plans/`
+juste avant d'écrire chaque fichier** : une autre session (`/ticket` ad hoc parallèle) a pu
+créer un plan entre ton calcul et ton écriture, et une collision de numéro casse la
+numérotation pour toujours.
 
 **Aucun fichier existant n'est écrasé, jamais**, quel que soit son statut. Sur un projet qui a
 déjà des plans :
@@ -153,9 +156,13 @@ Trois sections se recalculent à chaque rafraîchissement, et elles seules :
   au projet fini.
 - **Prêts à partir** — les lots `todo` dont **toutes** les dépendances sont `done`, en commandes
   copiables. C'est la seule section qui bouge à chaque ticket terminé.
-- **Reste à couvrir** — les items du `Dans` qui n'appartiennent à aucun lot. Normalement vide ;
-  non vide, c'est un périmètre étendu depuis la dernière génération, donc un appel à relancer le
-  mode génération.
+- **Reste à couvrir** — les items du `Dans` qui n'appartiennent à aucun lot. Pour la calculer,
+  relis la liste `Dans` de `docs/cadrage.md` — c'est la **seule lecture hors fichiers de plans
+  de ce mode**, et elle est indispensable : les en-têtes `Couvre:` ne peuvent pas dire ce
+  qu'aucun lot ne couvre. Cadrage absent (projet sans `/new-project`, tickets tous ad hoc) :
+  la section affiche `—`. Normalement vide ; non vide, c'est un périmètre étendu depuis la
+  dernière génération — ou jamais projeté — donc un appel à relancer le mode génération,
+  dis-le explicitement.
 
 Quand plusieurs lots sont prêts en même temps, dis-le explicitement plutôt que de n'en proposer
 qu'un — avec la réserve sur le build partagé énoncée plus haut.

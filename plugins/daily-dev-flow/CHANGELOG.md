@@ -92,6 +92,47 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 - La clé `regles_retex`, promise par l'étape 2 de `/ticket`, entre au **contrat d'entrée** de
   `backend-dev` et `frontend-dev` — la dernière maille de la chaîne d'amélioration n'était pas
   branchée côté agents.
+- **L'amorçage n'existe plus qu'à un seul endroit.** Nouvelle skill interne
+  `bootstrap-project` : ce qui s'écrit, ce qui ne s'écrit jamais, le build de fumée et les
+  garde-fous vivaient en deux proses indépendantes (`/new-project` étape 11 et le chemin
+  « cadré non amorcé » de `/ticket`) — le second avait d'ailleurs déjà perdu le build de
+  fumée. Les deux commandes invoquent désormais la même skill, exécutée en ligne, jamais
+  déléguée à un agent.
+- **Le tronc commun des agents dev part dans `conventions/agent-dev-protocole.md`.** Les
+  fiches `backend-dev` et `frontend-dev` étaient identiques à ~75 % (contrats, cas premier
+  ticket, blocage) — deux copies vouées à diverger, et déjà divergées sur les payloads de
+  retry. Le protocole porte contrats d'entrée/sortie et cas particuliers à un seul endroit ;
+  chaque fiche ne garde que sa spécificité de couche. Le contrat de sortie gagne
+  `resume.contrats_produits` (nature + signature réelle de tout ce que la sous-tâche
+  expose) : c'est lui que `contexte_dependance` transporte — trois phrases de synthèse ne
+  transportaient pas un contrat d'API, ce qui forçait `frontend-dev` à relire les fichiers
+  backend.
+- **Contrat `planner` resserré** : chaque symbole est rattaché aux fichiers où il a été
+  constaté (comme les notes — un symbole sans fichier était infiltrable par l'intersection de
+  l'étape 2) ; une note qui ne recoupe aucune sous-tâche est remontée (découpage incomplet ou
+  information pour la gate), jamais perdue en silence ; et une cible textuelle (texte affiché,
+  fichier ou symbole cité) se cherche au grep **avant** la recherche sémantique — jamais de
+  construction de graphe pour localiser une chaîne.
+- **Une reprise ne fait plus confiance aveugle au disque.** Les statuts `in_progress` sont
+  écrits sur la vague et les sous-tâches **au lancement** (le schéma le prévoyait, aucune
+  étape ne le commandait — une interruption laissait un plan qui mentait sur l'état réel).
+  À la reprise, toute sous-tâche interrompue est relancée avec `avertissement_reprise` et la
+  liste `git status`/`git diff` des fichiers touchés non committés : l'agent vérifie et
+  réécrit plutôt que d'imiter un contenu partiel — qui peut très bien compiler — ou de le
+  croire terminé.
+- **Le multi-session est traité là où il cassait.** L'étape 0 ne propose plus de
+  « reprendre » un plan `in_progress` quand `$ARGUMENTS` désigne un autre lot (il tourne
+  peut-être dans une autre session) ; la gate de dépendance distingue un lot `todo` (à lancer
+  d'abord) d'un `in_progress` (à attendre, pas à relancer) ; les fichiers retex — cumulatifs,
+  non régénérables, donc hors du périmètre de la « course sans gravité » de `BACKLOG.md` —
+  sont relus juste avant chaque écriture et fusionnés ; et la numérotation `NNNN` re-scanne
+  `plans/` juste avant d'écrire (deux sessions pouvaient calculer le même max+1).
+- **Le backlog ne peut plus être orphelin.** Sur un cadrage interrompu avant l'étape 12, le
+  flux « cadré non amorcé » de `/ticket` invoque désormais `generate-backlog` en mode
+  génération après l'amorçage et propose le lot couvrant la demande, au lieu de continuer en
+  ad hoc pour toujours ; et le mode rafraîchissement lit explicitement le `Dans` de
+  `docs/cadrage.md` pour calculer « Reste à couvrir » — les en-têtes `Couvre:` ne peuvent pas
+  dire ce qu'aucun lot ne couvre.
 
 - **`create-pr` embarque la documentation dans la PR.** Nouvelle étape 3 « Documentation
   embarquée » : avant les commits, la skill déduit du diff réel les mises à jour de
