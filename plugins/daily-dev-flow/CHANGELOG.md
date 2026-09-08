@@ -7,6 +7,7 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+
 - **Le flux `/ticket` apprend de ses accrocs : étape 7 « retex ».** Pendant l'exécution,
   l'orchestrateur consigne les signaux au fil de l'eau dans une nouvelle section
   `## Signaux retex` du fichier de plan (découpage modifié à la gate, sous-tâche `failed`,
@@ -71,6 +72,14 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
   de lots, lots prêts à partir, items du périmètre pas encore couverts.
 
 ### Changed
+
+- **L'agent `researcher` est renommé `planner`** (`agents/planner.md`), la clé de payload
+  `contexte_researcher` devenant `contexte_planner` dans `backend-dev`, `frontend-dev` et
+  `/ticket`. Le nom reflète son rôle réel en tête de flux — analyse et qualification du ticket
+  (besoin fonctionnel, cible technique, ambiguïtés) — au-delà de la seule recherche. Le
+  découpage et l'écriture du plan restent à l'orchestrateur `/ticket`, inchangés. Comportement
+  et contrat de sortie identiques ; seuls le nom et la clé changent.
+
 - **L'amorçage du projet passe de la vague 1 du premier `/ticket` à l'étape 11 de
   `/new-project`.** Poser le manifeste, les dépendances, les dossiers, les fichiers de contrats
   et la configuration de build ne demande aucun arbitrage : c'est la recopie de ce que le
@@ -95,7 +104,19 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
   se présente plus que sur un cadrage interrompu avant son étape 11 ou un projet cadré par une
   version antérieure du plugin — la couture par le `CLAUDE.md` du projet cible est inchangée.
 
+- Gabarits de `templates/` : **le suffixe `.template.md` devient la règle pour les quatre**.
+  `cadrage.md`, `architecture.md` et `decisions.md` deviennent `cadrage.template.md`,
+  `architecture.template.md` et `decisions.template.md` ; `CLAUDE.template.md` ne change pas.
+  Trois noms nus à côté d'un nom suffixé laissaient lire `templates/architecture.md` comme
+  « l'architecture du plugin » alors que c'est un squelette à remplir, et forçaient à défendre
+  le cas de `CLAUDE.template.md` comme une exception — à deux endroits. Le nom dit désormais
+  seul qu'il s'agit d'une forme, et la raison du suffixe est énoncée une fois, dans le
+  `CLAUDE.md` du plugin. Les fichiers **produits** dans le projet cible sont inchangés
+  (`docs/cadrage.md`, `docs/architecture.md`, `docs/decisions.md`, `CLAUDE.md`) : aucun impact
+  sur les projets déjà cadrés.
+
 ### Fixed
+
 - `README.md` était confié à la skill `generate-readme` **depuis une sous-tâche** d'amorçage,
   alors que `backend-dev` et `frontend-dev` n'ont pas l'outil `Skill` dans leur frontmatter :
   la consigne était inexécutable par l'agent qui la recevait. Sur un run réel, l'orchestrateur
@@ -107,18 +128,6 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
   avec la fonctionnalité **écrite en clair** plutôt qu'un marqueur à remplacer, et une seule
   action à faire en clôture. Même correction dans `/ticket` en mode greenfield, qui renvoyait
   vers `/new-project` sans préfixe.
-
-### Changed
-- Gabarits de `templates/` : **le suffixe `.template.md` devient la règle pour les quatre**.
-  `cadrage.md`, `architecture.md` et `decisions.md` deviennent `cadrage.template.md`,
-  `architecture.template.md` et `decisions.template.md` ; `CLAUDE.template.md` ne change pas.
-  Trois noms nus à côté d'un nom suffixé laissaient lire `templates/architecture.md` comme
-  « l'architecture du plugin » alors que c'est un squelette à remplir, et forçaient à défendre
-  le cas de `CLAUDE.template.md` comme une exception — à deux endroits. Le nom dit désormais
-  seul qu'il s'agit d'une forme, et la raison du suffixe est énoncée une fois, dans le
-  `CLAUDE.md` du plugin. Les fichiers **produits** dans le projet cible sont inchangés
-  (`docs/cadrage.md`, `docs/architecture.md`, `docs/decisions.md`, `CLAUDE.md`) : aucun impact
-  sur les projets déjà cadrés.
 
 ## [0.2.1] - 2026-09-07
 

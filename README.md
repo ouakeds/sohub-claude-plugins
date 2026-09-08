@@ -7,7 +7,7 @@ actuellement un plugin : **daily-dev-flow**.
 
 - [Claude Code](https://claude.com/claude-code) installé.
 - `uv`/`uvx` sur la machine, si vous voulez le MCP `code-review-graph` utilisé par l'agent
-  `researcher` de `daily-dev-flow` (dégradation automatique en fallback grep/glob sinon).
+  `planner` de `daily-dev-flow` (dégradation automatique en fallback grep/glob sinon).
 
 ## Installation
 
@@ -49,7 +49,7 @@ libre d'un ticket hors backlog.
 - Sans `--auto` : une gate de confirmation intervient avant le lancement des développements.
 - Avec `--auto` : le flux s'exécute de bout en bout sans interruption.
 
-L'orchestrateur route vers les agents (`researcher`, `backend-dev`, `frontend-dev`,
+L'orchestrateur route vers les agents (`planner`, `backend-dev`, `frontend-dev`,
 `build-verifier`) et les skills du plugin, organisées par catégorie :
 
 | Catégorie | Skills | Rôle |

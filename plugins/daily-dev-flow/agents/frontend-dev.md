@@ -96,7 +96,7 @@ sous-tâche mal cadrée vaut mieux signalée que devinée.
   "titre": "string",
   "description": "string",
   "fichiers_cibles": ["..."],
-  "contexte_researcher": "optionnel — notes/symboles pertinents extraits par researcher, filtrés sur ces fichiers_cibles ; absent sur un projet en amorçage, où il n'y a rien à extraire",
+  "contexte_planner": "optionnel — notes/symboles pertinents extraits par planner, filtrés sur ces fichiers_cibles ; absent sur un projet en amorçage, où il n'y a rien à extraire",
   "contexte_stack": { "langage": "...", "framework": "...", "outil_build": "...", "gestionnaire_paquets": "...", "fichier_manifeste": "..." },
   "contexte_dependance": "optionnel — resume complet de la sous-tâche backend dont dépend celle-ci"
 }

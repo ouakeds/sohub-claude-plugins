@@ -1,9 +1,10 @@
 ---
-name: researcher
+name: planner
 description: >
-  Analyse un ticket collé par l'utilisateur : extrait le besoin fonctionnel et localise la
-  cible technique (fichiers, modules, symboles) via recherche sémantique. Read-only, jamais
-  invoqué directement par l'utilisateur — uniquement par la commande /ticket.
+  Analyse et qualifie un ticket collé par l'utilisateur : extrait le besoin fonctionnel,
+  localise la cible technique (fichiers, modules, symboles) via recherche sémantique et
+  remonte les ambiguïtés à trancher. Read-only, jamais invoqué directement par
+  l'utilisateur — uniquement par la commande /ticket, qui garde le découpage et le plan.
 tools: Read, Grep, Glob, mcp__code-review-graph__semantic_search_nodes_tool, mcp__code-review-graph__get_minimal_context_tool, mcp__code-review-graph__get_architecture_overview_tool, mcp__code-review-graph__build_or_update_graph_tool
 model: sonnet
 ---
