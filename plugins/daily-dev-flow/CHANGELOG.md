@@ -7,6 +7,20 @@ et ce projet respecte le [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Le flux `/ticket` apprend de ses accrocs : étape 7 « retex ».** Pendant l'exécution,
+  l'orchestrateur consigne les signaux au fil de l'eau dans une nouvelle section
+  `## Signaux retex` du fichier de plan (découpage modifié à la gate, sous-tâche `failed`,
+  chaque tentative de la boucle de build, consigne corrective de l'utilisateur) — au même geste
+  d'écriture que les statuts, et rien du tout sur un ticket sans accroc. En fin de ticket
+  (`done` comme `failed`), si des signaux existent, l'étape 7 en déduit des suggestions typées
+  (règle de convention, amélioration de découpage, contexte manquant), les propose une à une à
+  l'utilisateur (`Accepter` / `Rejeter` / `Décider plus tard`) et les archive dans
+  `.sohub-claude-plugin/retex.md` du projet cible. Une suggestion acceptée devient une ligne de
+  `## Règles actives`, la seule section relue par l'étape 2 au découpage des tickets suivants —
+  c'est ce qui ferme la boucle ; une rejetée reste dans `## Historique` pour ne pas être
+  reproposée. Les enseignements portant sur le plugin lui-même ne sont pas stockés côté projet :
+  ils sont signalés à l'utilisateur en une ligne. Rien n'est jamais appliqué automatiquement.
+  Nouveau gabarit `templates/retex.template.md`.
 - **Les agents de développement écrivent contre une convention de qualité, plus seulement contre
   le style du voisinage.** Nouveau dossier `conventions/` : `code-quality.md` (socle universel —
   nommage qui révèle l'intention, fonctions à un seul niveau d'abstraction et complexité

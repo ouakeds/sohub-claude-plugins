@@ -1,7 +1,7 @@
 {
   "name": "daily-dev-flow",
-  "version": "0.2.1",
-  "description": "Flux ticket → analyse → développement → vérification de build, générique multi-stack, orchestré par /ticket.",
+  "version": "0.3.0",
+  "description": "Flux ticket → analyse → développement → vérification de build → retex, générique multi-stack, orchestré par /ticket.",
   "skills": [
     "./skills/flow/",
     "./skills/documentation/",

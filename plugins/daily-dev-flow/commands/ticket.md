@@ -1,5 +1,5 @@
 ---
-description: Orchestre le flux ticket → analyse → développement → vérification de build sur le projet cible. Prend le numéro d'un lot du backlog ou le texte libre d'un ticket.
+description: Orchestre le flux ticket → analyse → développement → vérification de build → retex sur le projet cible. Prend le numéro d'un lot du backlog ou le texte libre d'un ticket.
 argument-hint: <NNNN> | "<texte du ticket>" [--auto]
 disable-model-invocation: true
 ---
@@ -162,6 +162,11 @@ greenfield), produis une liste de sous-tâches :
   résume une note au passage, transmets-la telle quelle ou pas du tout. Ne redonne jamais le
   digest complet à chaque sous-tâche : c'est du bruit et du coût token inutile pour une
   sous-tâche qui ne touche qu'un sous-ensemble des fichiers.
+- **Règles actives du retex** : si `.sohub-claude-plugin/retex.md` existe dans le projet cible,
+  lis sa seule section `## Règles actives` — jamais `## Historique`, qui ne sert qu'à l'étape 7
+  — et applique ces règles au découpage. Une règle qui recoupe une sous-tâche précise descend
+  dans son payload à l'étape 4 (clé `regles_retex`), recopiée telle quelle, jamais reformulée —
+  même régime que les contrats. Fichier absent = aucune règle, on n'en invente pas.
 
 ## Étape 3 — écriture du plan + validation
 
@@ -190,6 +195,11 @@ greenfield), produis une liste de sous-tâches :
    rafraîchis la vue en invoquant `generate-backlog`. Un lot annulé à la gate **reste `todo`** —
    sinon le backlog afficherait en cours un travail que personne n'a lancé, et l'étape 0
    proposerait de le reprendre.
+6. Sur `Modifier le découpage` : une fois le découpage repris avec l'utilisateur, consigne dans
+   la section `## Signaux retex` du plan une ligne datée disant ce qu'il a corrigé et pourquoi —
+   un découpage retouché à la gate est un signal que le découpage initial était fautif, matière
+   de l'étape 7. La correction elle-même reste dans `Découpage`/`Vagues d'exécution` comme
+   d'habitude.
 
 ## Étape 4 — développement
 
@@ -220,6 +230,11 @@ Pour chaque vague, dans l'ordre :
 4. Si une sous-tâche échoue (`statut: failed`), marque la vague concernée `failed`, arrête le
    lancement des vagues suivantes, et remonte la `raison_echec` à l'utilisateur avant de
    décider de la suite (relance ciblée possible, mais pas automatique et silencieuse).
+5. Deux signaux retex se consignent au fil de l'eau dans `## Signaux retex` du plan, une ligne
+   datée chacun, au même geste d'écriture que la mise à jour des statuts : une sous-tâche
+   `failed` (id + `raison_echec`), et toute consigne corrective donnée par l'utilisateur en
+   cours de vague (ce qu'il a repris, sur quel fichier ou sous-tâche). Un ticket sans accroc
+   n'écrit rien dans cette section — elle reste vide, pas remplie de « RAS ».
 
 ## Étape 5 — vérification de build
 
@@ -233,11 +248,15 @@ Pour chaque vague, dans l'ordre :
    `fichiers_cibles` des sous-tâches déjà exécutées ; à défaut, le type majoritaire de la
    dernière vague). Le payload de retry contient `contexte_stack` (inchangé) + les erreurs
    ciblées sur les fichiers de cet agent uniquement, pas le log complet. Relance `build-check`
-   après chaque correction.
+   après chaque correction. Consigne chaque tentative dans `## Signaux retex` (une ligne :
+   famille d'erreur, cause probable, agent appelé) — trois tentatives sur la même famille
+   d'erreur sont un pattern à faire remonter par l'étape 7, pas un accident.
 5. **Après 3 échecs** : marque `Statut global: failed` dans le plan, ajoute une section
    `## Échec build` avec le dernier résumé d'erreurs et l'historique des 3 tentatives (agent
    appelé, sous-tâche visée), et arrête-toi — pas de 4ᵉ tentative automatique. Indique
-   clairement à l'utilisateur où trouver le détail (chemin du fichier de plan).
+   clairement à l'utilisateur où trouver le détail (chemin du fichier de plan), puis passe
+   directement à l'étape 7 — un ticket qui échoue est précisément celui dont le retex a le plus
+   à dire.
 
 ## Étape 6 — synthèse finale
 
@@ -257,3 +276,35 @@ tourner dans deux sessions en même temps, avec la réserve que le build est par
 `build-check` sur le même dossier peuvent se gêner). Ne les lance pas toi-même. Un `failed` se
 signale de la même façon : le statut est écrit dans le plan, la vue est rafraîchie, et
 l'utilisateur voit où en est le backlog sans avoir à ouvrir huit fichiers.
+
+## Étape 7 — retex
+
+**Seulement si la section `## Signaux retex` du plan est non vide.** Sinon cette étape n'existe
+pas : ne produis ni fichier, ni entrée, ni message « rien à signaler » — une rétro sans signal
+est du bruit. Elle s'exécute après l'étape 6 sur un ticket `done`, et directement après
+l'étape 5 sur un ticket `failed`.
+
+1. Relis les signaux du ticket et déduis-en des **suggestions actionnables**, chacune typée :
+   `règle de convention` (propre au projet cible), `amélioration de découpage`, `contexte
+   manquant`. Une suggestion doit pouvoir citer le signal qui la fonde ; pas de signal, pas de
+   suggestion.
+2. Trie par destination : un enseignement **propre au projet cible** (convention de sa stack,
+   piège de son code) va dans son `retex.md` ; un enseignement **sur le plugin lui-même**
+   (découpage systématiquement fautif, boucle de build gaspillée, agent mal outillé) ne se
+   stocke pas côté projet — signale-le à l'utilisateur en une ligne comme amélioration possible
+   du plugin, sans le faire entrer dans le flux des questions du point 4.
+3. Crée `.sohub-claude-plugin/retex.md` depuis `${CLAUDE_PLUGIN_ROOT}/templates/retex.template.md`
+   s'il n'existe pas. Sinon, relis son `## Historique` avant d'écrire : une suggestion déjà
+   `rejetée` ne se repropose pas à l'identique, et un signal déjà vu sur un ticket précédent se
+   présente comme **récurrence** — suggestion plus appuyée, citant les tickets concernés.
+4. Ajoute chaque suggestion en tête de `## Historique` avec `Statut : proposée`, puis
+   présente-les à l'utilisateur via `AskUserQuestion` — une question par suggestion, options
+   `Accepter` / `Rejeter` / `Décider plus tard`. `--auto` ne saute pas cette gate : elle arrive
+   après le travail, elle ne bloque rien.
+5. Selon la réponse : `Accepter` → statut `acceptée` dans l'historique **et** la règle,
+   reformulée en une ligne, ajoutée sous `## Règles actives` (c'est elle que l'étape 2 relira
+   aux tickets suivants) ; `Rejeter` → statut `rejetée`, l'entrée reste dans l'historique
+   précisément pour ne pas revenir ; `Décider plus tard` → reste `proposée`, sans relance.
+6. Tu n'appliques jamais rien toi-même : une règle `acceptée` vit dans `retex.md`, et n'est
+   promue dans le `CLAUDE.md` du projet cible ou ailleurs que si l'utilisateur le demande
+   explicitement.

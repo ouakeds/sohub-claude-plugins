@@ -1,7 +1,8 @@
 # daily-dev-flow — conventions internes
 
 Plugin autonome (roster d'agents propre, pas d'héritage d'un CLAUDE.md global) qui outille le
-flux **ticket → analyse → développement → vérification de build**, générique multi-stack.
+flux **ticket → analyse → développement → vérification de build → retex**, générique
+multi-stack.
 
 Voir `PLAN.md` (racine du dépôt) pour le cadrage complet. Ce plugin vit sous `plugins/daily-dev-flow/`
 dans un dépôt qui héberge potentiellement plusieurs plugins (cf. `.claude-plugin/marketplace.json`
@@ -36,11 +37,13 @@ déclarée dans `plugin.json` — jamais posée à plat directement sous `skills
 
 `templates/` porte la forme des fichiers que le plugin écrit dans le projet cible : les quatre
 du cadrage — `cadrage.template.md`, `architecture.template.md`, `decisions.template.md`,
-`CLAUDE.template.md` — plus `plan.template.md`, la forme d'un lot de travail, et
-`BACKLOG.template.md`, celle de la vue d'ensemble. Ce sont des
+`CLAUDE.template.md` — plus `plan.template.md`, la forme d'un lot de travail,
+`BACKLOG.template.md`, celle de la vue d'ensemble, et `retex.template.md`, celle du retour
+d'expérience cumulé. Ce sont des
 **squelettes nus** — titres, ordre des sections, forme des tableaux, marqueurs `<…>` — sans
-consigne de remplissage : les consignes vivent dans `commands/new-project.md` et dans
-`skills/flow/generate-backlog/`, à un seul endroit chacune.
+consigne de remplissage : les consignes vivent dans `commands/new-project.md`,
+`skills/flow/generate-backlog/` et, pour le retex, l'étape 7 de `commands/ticket.md` — à un
+seul endroit chacune.
 
 `plan.template.md` a une particularité : **deux auteurs écrivent dans le même fichier**.
 `generate-backlog` pose l'en-tête, le besoin, les critères et les fichiers prévus ; `/ticket`
@@ -286,7 +289,10 @@ de cible technique moins précise.
 Tout artefact généré par le plugin (plans, audits, doc OpenAPI) est écrit dans
 `.sohub-claude-plugin/` à la racine du **projet cible** (jamais dans le plugin lui-même), sous
 un sous-dossier par nature (`plans/`, `audit/`, `documentations/`), avec un numéro de version
-`NNNN` auto-incrémenté par sous-dossier — jamais réutilisé, jamais écrasé.
+`NNNN` auto-incrémenté par sous-dossier — jamais réutilisé, jamais écrasé. Exception assumée :
+`.sohub-claude-plugin/retex.md` est un fichier **unique et cumulatif**, édité en place par
+l'étape 7 de `/ticket` — un retex versionné par ticket perdrait sa raison d'être, qui est de
+porter les règles actives relues au découpage de chaque ticket suivant.
 `.sohub-claude-plugin/` est gitignoré automatiquement à la première exécution (ajout d'une
 ligne au `.gitignore` du projet cible si elle n'y est pas déjà).
 
